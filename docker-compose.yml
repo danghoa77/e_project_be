@@ -1,0 +1,121 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:6.0 # Sử dụng phiên bản MongoDB 6.0
+    container_name: ecommerce-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db # Lưu trữ dữ liệu vào volume để không bị mất khi container dừng/xóa
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+    networks:
+      - ecommerce-network
+
+  # Redis
+  redis:
+    image: redis:7.0-alpine # Sử dụng Redis 7.0 phiên bản alpine nhẹ
+    container_name: ecommerce-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data # Lưu trữ dữ liệu Redis
+    command: redis-server --appendonly yes
+    networks:
+      - ecommerce-network
+
+  # User Service
+  user-service:
+    build:
+      context: ./microservices/user-service # Đường dẫn đến thư mục user-service
+      dockerfile: Dockerfile
+    container_name: user-service
+    env_file:
+      - ./.env # Sử dụng biến môi trường từ .env
+    ports:
+      - "3001:3000" # Có thể điều chỉnh port nếu muốn
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - ecommerce-network
+
+  # Product Service
+  product-service:
+    build:
+      context: ./microservices/product-service
+      dockerfile: Dockerfile
+    container_name: product-service
+    env_file:
+      - ./.env
+    ports:
+      - "3002:3000"
+    depends_on:
+      - mongodb
+      - redis
+      - user-service # Product Service cần User Service để lấy thông tin người dùng
+    networks:
+      - ecommerce-network
+
+  # Order Service
+  order-service:
+    build:
+      context: ./microservices/order-service
+      dockerfile: Dockerfile
+    container_name: order-service
+    env_file:
+      - ./.env
+    ports:
+      - "3003:3000"
+    depends_on:
+      - mongodb
+      - redis
+      - product-service # Order Service cần Product Service để kiểm tra tồn kho
+      - user-service # Order Service cần User Service để lấy thông tin người dùng
+    networks:
+      - ecommerce-network
+
+  # Payment Service
+  payment-service:
+    build:
+      context: ./microservices/payment-service
+      dockerfile: Dockerfile
+    container_name: payment-service
+    env_file:
+      - ./.env
+    ports:
+      - "3004:3000"
+    depends_on:
+      - mongodb
+      - redis
+      - order-service # Payment Service gửi event về Order Service
+    networks:
+      - ecommerce-network
+
+  # Nginx API Gateway
+  api-gateway:
+    build:
+      context: ./api-gateway # Đường dẫn đến thư mục api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    ports:
+      - "80:80" # Port cho API Gateway
+      - "443:443" # Cấu hình HTTPS sau này
+    depends_on:
+      - user-service
+      - product-service
+      - order-service
+      - payment-service
+    networks:
+      - ecommerce-network
+
+volumes:
+  mongo_data:
+  redis_data:
+
+networks:
+  ecommerce-network:
+    driver: bridge

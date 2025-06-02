@@ -1,0 +1,31 @@
+// order-service/src/app.module.ts
+import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { MongooseModule } from '@nestjs/mongoose';
+import { OrdersModule } from './orders/orders.module';
+import { CartsModule } from './carts/carts.module'; 
+import { RedisModule } from './redis/redis.module';
+import { HttpModule } from '@nestjs/axios'; 
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    MongooseModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        uri: `mongodb+srv://${configService.get<string>('MONGO_USERNAME')}:${configService.get<string>('MONGO_PASSWORD')}@${configService.get<string>('MONGO_HOST')}/${configService.get<string>('MONGO_DATABASE')}?retryWrites=true&w=majority&appName=Cluster0`,
+      }),
+      inject: [ConfigService],
+    }),
+
+    HttpModule, // Gọi API của Product Service
+    OrdersModule,
+    CartsModule,
+    RedisModule,
+  ],
+  controllers: [],
+  providers: [],
+})
+export class AppModule { }
