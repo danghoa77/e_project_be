@@ -5,7 +5,7 @@ import { Cart, CartSchema } from '../schemas/cart.schema';
 import { CartsService } from './carts.service';
 import { CartsController } from './carts.controller';
 import { HttpModule } from '@nestjs/axios';
-import { RedisModule } from '../redis/redis.module';
+import { RedisModule } from '@app/common-auth';
 
 @Module({
     imports: [

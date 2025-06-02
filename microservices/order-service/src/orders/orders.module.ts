@@ -5,8 +5,8 @@ import { Order, OrderSchema } from '../schemas/order.schema';
 import { OrdersService } from './orders.service';
 import { OrdersController } from './orders.controller';
 import { HttpModule } from '@nestjs/axios';
-import { RedisModule } from '../redis/redis.module';
-import { CartsModule } from '../carts/carts.module'; // Import CartsModule
+import { RedisModule } from '@app/common-auth';
+import { CartsModule } from '../carts/carts.module';
 
 @Module({
     imports: [

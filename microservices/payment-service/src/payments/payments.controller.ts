@@ -14,7 +14,9 @@ import {
 } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
-import { Response } from 'express'; // Cần cài đặt @types/express
+import { Response } from 'express'; 
+
+
 // Giả định JwtAuthGuard
 class JwtAuthGuard { canActivate() { return true; } }
 

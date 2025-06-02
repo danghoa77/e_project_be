@@ -12,7 +12,7 @@ class UpdateVariantDto extends PartialType(CreateVariantDto) {}
 const ProductFieldsToUpdateDto = OmitType(CreateProductDto, ['variants'] as const);
 
 export class UpdateProductDto extends PartialType(ProductFieldsToUpdateDto) {
-    // Bây giờ, chúng ta định nghĩa rõ ràng thuộc tính 'variants' với kiểu UpdateVariantDto mong muốn.
+    // định nghĩa rõ ràng thuộc tính 'variants' với kiểu UpdateVariantDto mong muốn.
     @IsOptional()
     @IsArray()
     @ValidateNested({ each: true })

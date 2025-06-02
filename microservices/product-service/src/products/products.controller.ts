@@ -17,9 +17,7 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ProductQueryDto } from './dto/product-query.dto';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { Roles, Role } from '@app/common-auth/decorator/roles.decorator';
-import { JwtAuthGuard } from '@app/common-auth/guards/jwt-auth.guard';
-import { RolesGuard } from '@app/common-auth/guards/roles.guard';
+import { RolesGuard, Roles, Role, JwtAuthGuard } from '@app/common-auth';
 
 
 

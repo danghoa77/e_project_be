@@ -7,6 +7,10 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
+    "build:user-service": "nest build user-service",
+    "build:product-service": "nest build product-service",
+    "build:order-service": "nest build order-service",
+    "build:payment-service": "nest build payment-service",
     "format": "prettier --write \"apps/**/*.ts\" \"libs/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",

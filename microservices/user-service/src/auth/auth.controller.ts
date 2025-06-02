@@ -3,12 +3,10 @@ import { Controller, Post, Body, UseGuards, Request, Get, HttpCode, HttpStatus }
 import { AuthService } from './auth.service';
 import { RegisterUserDto } from '../users/dto/register-user.dto';
 import { LoginUserDto } from '../users/dto/login-user.dto';
-import { LocalAuthGuard } from '@app/common-auth/guards/local-auth.guard';
-import { JwtAuthGuard } from '@app/common-auth/guards/jwt-auth.guard';
-import { RolesGuard } from '@app/common-auth/guards/roles.guard';
-import { Roles } from '../../../../libs/common-auth/src/decorator/roles.decorator';
+
 import { GetUserDto } from '../users/dto/get-user.dto';
 import { plainToClass } from 'class-transformer';
+import { Roles, RolesGuard, JwtAuthGuard, LocalAuthGuard } from '@app/common-auth';
 
 @Controller('auth')
 export class AuthController {

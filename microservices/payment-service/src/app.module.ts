@@ -3,7 +3,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { PaymentsModule } from './payments/payments.module';
-import { RedisModule } from './redis/redis.module';
+import { RedisModule } from '@app/common-auth';
 import { HttpModule } from '@nestjs/axios';
 
 @Module({

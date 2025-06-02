@@ -7,9 +7,8 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ProductQueryDto } from './dto/product-query.dto';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
-import { RedisService } from '../redis/redis.service';
-import { Types } from 'mongoose';
-import { log } from 'console';
+import { RedisService } from '@app/common-auth';
+
 
 @Injectable()
 export class ProductsService {

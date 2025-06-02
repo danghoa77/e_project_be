@@ -6,7 +6,7 @@ import { UsersService } from '../users/users.service';
 import { RegisterUserDto } from '../users/dto/register-user.dto';
 import { LoginUserDto } from '../users/dto/login-user.dto';
 import { User } from '../schemas/user.schema';
-import { RedisService } from '@app/common-auth/redis/redis.service';
+import { RedisService } from '@app/common-auth';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()

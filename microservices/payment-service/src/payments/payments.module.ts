@@ -6,7 +6,7 @@ import { PaymentsService } from './payments.service';
 import { PaymentsController } from './payments.controller';
 import { ConfigModule } from '@nestjs/config';
 import { HttpModule } from '@nestjs/axios';
-import { RedisModule } from '../redis/redis.module';
+import { RedisModule } from '@app/common-auth';
 
 @Module({
     imports: [

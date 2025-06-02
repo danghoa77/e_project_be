@@ -1,23 +1,36 @@
-# Sử dụng base image của Node.js
-FROM node:18-alpine
+# microservices/payment-service/Dockerfile
 
-# Tạo thư mục làm việc bên trong container
-WORKDIR /app
+#-------------------------------- BUILDER STAGE --------------------------------
+FROM node:18-alpine AS builder
 
-# Sao chép package.json và package-lock.json để cài đặt dependencies
-COPY package*.json ./
+WORKDIR /usr/src/app
 
-# Cài đặt dependencies
+COPY package.json package-lock.json* ./
+COPY nest-cli.json ./
+COPY tsconfig.json ./
+COPY tsconfig.build.json ./
+
 RUN npm install
 
-# Sao chép toàn bộ mã nguồn vào thư mục làm việc
-COPY . .
+COPY ./libs ./libs
+COPY ./microservices ./microservices
 
-# Build ứng dụng NestJS
-RUN npm run build
+# Build the payment-service application
+RUN npm run build payment-service
+# Hoặc: RUN npx nest build payment-service
 
-# Port mà ứng dụng NestJS lắng nghe
-EXPOSE 3000
+#-------------------------------- PRODUCTION STAGE --------------------------------
+FROM node:18-alpine
 
-# Lệnh chạy ứng dụng khi container khởi động
-CMD ["node", "dist/main"]
+WORKDIR /usr/src/app
+
+COPY package.json package-lock.json* ./
+RUN npm install --omit=dev --ignore-scripts --prefer-offline
+
+# Copy the built application artifacts from the builder stage
+COPY --from=builder /usr/src/app/dist/microservices/payment-service ./dist
+
+# Cổng mà payment-service sẽ lắng nghe (ví dụ: 3004)
+EXPOSE 3004
+
+CMD ["node", "dist/main.js"]

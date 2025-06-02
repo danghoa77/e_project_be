@@ -8,7 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { RedisService } from '../redis/redis.service';
+import { RedisService } from '@app/common-auth';
 
 @Injectable()
 export class PaymentsService {

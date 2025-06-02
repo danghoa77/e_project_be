@@ -7,7 +7,7 @@ import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/users.module';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
-import { RedisModule } from '@app/common-auth/redis/redis.module';
+import { RedisModule } from '@app/common-auth';
 
 @Module({
     imports: [

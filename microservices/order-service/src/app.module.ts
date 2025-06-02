@@ -3,9 +3,9 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { OrdersModule } from './orders/orders.module';
-import { CartsModule } from './carts/carts.module'; 
-import { RedisModule } from './redis/redis.module';
-import { HttpModule } from '@nestjs/axios'; 
+import { CartsModule } from './carts/carts.module';
+import { RedisModule } from '@app/common-auth';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [

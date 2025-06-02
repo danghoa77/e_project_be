@@ -5,7 +5,7 @@ import { Cart } from '../schemas/cart.schema';
 import { AddToCartDto } from './dto/add-to-cart.dto';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { RedisService } from '@app/common-auth'; // Import RedisService từ common-auth module
+import { RedisService } from '@app/common-auth'; 
 
 @Injectable()
 export class CartsService {

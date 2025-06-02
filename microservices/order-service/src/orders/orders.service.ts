@@ -8,8 +8,8 @@ import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { CartsService } from '../carts/carts.service';
-import { RedisService } from '../redis/redis.service';
-import { Connection } from 'mongoose'; // Để truy cập connection cho transaction
+import { RedisService } from '@app/common-auth';
+import { Connection } from 'mongoose';
 import { InjectConnection } from '@nestjs/mongoose'; // Decorator mới
 
 @Injectable()
@@ -144,8 +144,8 @@ export class OrdersService implements OnModuleInit {
                         quantity: item.quantity,
                         operation: 'increase' // Thêm operation để Product Service biết tăng hay giảm
                     }, {
-                        headers: { 
-                            ...(session.id ? { 'X-Transaction-Session-Id': session.id.toString() } : {}) 
+                        headers: {
+                            ...(session.id ? { 'X-Transaction-Session-Id': session.id.toString() } : {})
                         } // Truyền session ID nếu cần
                     })
                 );

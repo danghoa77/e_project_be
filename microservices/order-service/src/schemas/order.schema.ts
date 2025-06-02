@@ -8,11 +8,11 @@ export class OrderItem {
     @Prop({ type: Types.ObjectId, required: true })
     productId: Types.ObjectId;
 
-    @Prop({ type: String, required: true }) // ID của variant cụ thể
+    @Prop({ type: String, required: true }) 
     variantId: string;
 
     @Prop({ type: String, required: true })
-    name: string; // Snapshot tên sản phẩm
+    name: string; 
 
     @Prop({ type: String, required: true })
     size: string;
@@ -21,7 +21,7 @@ export class OrderItem {
     color: string;
 
     @Prop({ type: Number, required: true, min: 0 })
-    price: number; // Giá tại thời điểm đặt hàng
+    price: number; 
 
     @Prop({ type: Number, required: true, min: 1 })
     quantity: number;

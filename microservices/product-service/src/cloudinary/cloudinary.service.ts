@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { v2 as cloudinary } from 'cloudinary';
 import { UploadApiResponse, UploadApiErrorResponse } from 'cloudinary';
-import * as streamifier from 'streamifier'; // Cần cài đặt: npm install streamifier @types/streamifier
+import * as streamifier from 'streamifier'; 
 
 @Injectable()
 export class CloudinaryService {
@@ -18,7 +18,7 @@ export class CloudinaryService {
     uploadImage(file: any): Promise<UploadApiResponse | UploadApiErrorResponse> {
         return new Promise((resolve, reject) => {
             const uploadStream = cloudinary.uploader.upload_stream(
-                { folder: 'ecommerce_products' }, // Thư mục lưu trữ trên Cloudinary
+                { folder: 'ecommerce_products' }, 
                 (error, result) => {
                     if (result) {
                         resolve(result);

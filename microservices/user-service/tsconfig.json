@@ -13,9 +13,6 @@
     "paths": {
       "@app/common-auth": [
         "libs/common-auth/src"
-      ],
-      "@app/common-auth/*": [
-        "libs/common-auth/src/*"
       ]
     }
   },

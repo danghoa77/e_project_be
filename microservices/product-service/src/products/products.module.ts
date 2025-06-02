@@ -5,7 +5,7 @@ import { ProductsService } from './products.service';
 import { ProductsController } from './products.controller';
 import { Product, ProductSchema } from '../schemas/product.schema';
 import { CloudinaryModule } from '../cloudinary/cloudinary.module';
-import { RedisModule } from '../redis/redis.module';
+import { RedisModule } from '@app/common-auth';
 
 @Module({
     imports: [

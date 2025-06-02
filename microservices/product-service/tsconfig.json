@@ -19,9 +19,6 @@
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
     "paths": {
-      "@userAuth/*": [
-        "../user-service/src/auth/*"
-      ],
       "@app/common-auth": [
         "libs/common-auth/src"
       ],

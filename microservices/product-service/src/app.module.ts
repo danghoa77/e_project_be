@@ -4,7 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ProductsModule } from './products/products.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
-import { RedisModule } from './redis/redis.module';
+import { RedisModule } from '@app/common-auth';
 
 @Module({
   imports: [
