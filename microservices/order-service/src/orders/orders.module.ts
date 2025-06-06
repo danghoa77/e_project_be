@@ -7,16 +7,17 @@ import { OrdersController } from './orders.controller';
 import { HttpModule } from '@nestjs/axios';
 import { RedisModule } from '@app/common-auth';
 import { CartsModule } from '../carts/carts.module';
-
+import { CommonAuthModule } from '@app/common-auth';
 @Module({
     imports: [
         MongooseModule.forFeature([{ name: Order.name, schema: OrderSchema }]),
-        HttpModule, // Để gọi Product Service
-        RedisModule, // Để lắng nghe Redis Stream và cache
-        CartsModule, // Để sử dụng CartsService trong OrdersService
+        HttpModule,
+        RedisModule,
+        CartsModule,
+        CommonAuthModule,
     ],
     controllers: [OrdersController],
     providers: [OrdersService],
-    exports: [OrdersService], // Export nếu cần cho Payment Service cập nhật
+    exports: [OrdersService],
 })
 export class OrdersModule { }

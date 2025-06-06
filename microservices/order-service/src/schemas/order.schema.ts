@@ -1,18 +1,18 @@
 // order-service/src/orders/schemas/order.schema.ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import { Document, Types, HydratedDocument } from 'mongoose';
 
-// Snapshot của sản phẩm tại thời điểm đặt hàng
+
 @Schema({ _id: false })
 export class OrderItem {
     @Prop({ type: Types.ObjectId, required: true })
     productId: Types.ObjectId;
 
-    @Prop({ type: String, required: true }) 
+    @Prop({ type: String, required: true })
     variantId: string;
 
     @Prop({ type: String, required: true })
-    name: string; 
+    name: string;
 
     @Prop({ type: String, required: true })
     size: string;
@@ -21,7 +21,7 @@ export class OrderItem {
     color: string;
 
     @Prop({ type: Number, required: true, min: 0 })
-    price: number; 
+    price: number;
 
     @Prop({ type: Number, required: true, min: 1 })
     quantity: number;
@@ -29,7 +29,7 @@ export class OrderItem {
 
 const OrderItemSchema = SchemaFactory.createForClass(OrderItem);
 
-// Địa chỉ giao hàng (snapshot từ User Service)
+
 @Schema({ _id: false })
 export class ShippingAddress {
     @Prop({ type: String, required: true })
@@ -68,6 +68,6 @@ export class Order extends Document {
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);
-
+export type OrderDocument = HydratedDocument<Order>;
 // OrderSchema.index({ userId: 1 });
 // OrderSchema.index({ status: 1 });

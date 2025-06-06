@@ -20,7 +20,7 @@ import { HttpModule } from '@nestjs/axios';
       inject: [ConfigService],
     }),
 
-    HttpModule, // Gọi API của Product Service
+    HttpModule, 
     OrdersModule,
     CartsModule,
     RedisModule,

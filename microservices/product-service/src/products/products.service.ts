@@ -61,7 +61,7 @@ export class ProductsService {
 
         const updatedProduct = await product.save();
         this.logger.log(`Updated stock for product ${productId}, variant ${variantId}: ${variant.stock}`);
-        await this.redisService.del(`product:${productId}`);// Xóa cache của sản phẩm cụ thể
+        await this.redisService.del(`product:${productId}`);
         await this.redisService.del('products:all');
 
         return updatedProduct;

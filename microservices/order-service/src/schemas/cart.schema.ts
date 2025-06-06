@@ -1,6 +1,6 @@
 // order-service/src/orders/schemas/cart.schema.ts
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import { Prop, Schema, SchemaFactory, } from '@nestjs/mongoose';
+import { Document, Types, HydratedDocument } from 'mongoose';
 
 @Schema({ _id: false })
 export class CartItem {
@@ -27,7 +27,7 @@ export class Cart extends Document {
     @Prop({ type: [CartItemSchema], default: [] })
     items: CartItem[];
 }
-
+export type CartDocument = HydratedDocument<Cart>;
 export const CartSchema = SchemaFactory.createForClass(Cart);
 
 // CartSchema.index({ userId: 1 });

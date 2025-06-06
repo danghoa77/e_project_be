@@ -22,10 +22,11 @@ import { RolesGuard, Role, JwtAuthGuard } from '@app/common-auth';
 
 
 @Controller('products')
-@UseGuards(JwtAuthGuard, RolesGuard)
 export class ProductsController {
     constructor(private readonly productsService: ProductsService) { }
 
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Role('admin')
     @Post()
     @UseInterceptors(FilesInterceptor('images', 5))
     async create(
@@ -46,7 +47,8 @@ export class ProductsController {
         return this.productsService.findOne(id);
     }
 
-
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Role('admin')
     @Patch('update-stock/:id')
     async updateStock(
         @Param('id') productId: string,
@@ -57,6 +59,8 @@ export class ProductsController {
         return this.productsService.updateVariantStock(productId, variantId, quantity, operation);
     }
 
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Role('admin')
     @Patch(':id')
     @UseInterceptors(FilesInterceptor('images', 5))
     async update(
@@ -67,6 +71,8 @@ export class ProductsController {
         return this.productsService.update(id, updateProductDto, files);
     }
 
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Role('admin')
     @Delete(':id')
     async remove(@Param('id') id: string) {
         return this.productsService.remove(id);

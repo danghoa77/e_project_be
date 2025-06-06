@@ -14,11 +14,10 @@ class ShippingAddressDto {
 }
 
 export class CreateOrderDto {
-    // Có thể lấy sản phẩm từ giỏ hàng hoặc gửi trực tiếp (ở đây chúng ta lấy từ giỏ hàng)
-    // @IsArray()
-    // @ValidateNested({ each: true })
-    // @Type(() => AddToCartDto)
-    // items: AddToCartDto[];
+
+    @ValidateNested({ each: true })
+    @Type(() => AddToCartDto)
+    items: AddToCartDto[];
 
     @IsNotEmpty({ message: 'Shipping address must not be empty.' })
     @ValidateNested()

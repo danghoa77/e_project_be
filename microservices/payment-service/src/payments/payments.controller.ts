@@ -14,33 +14,30 @@ import {
 } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
-import { Response } from 'express'; 
+import { Response } from 'express';
+import { RolesGuard, JwtAuthGuard, Role } from '@app/common-auth';
 
 
-// Giả định JwtAuthGuard
-class JwtAuthGuard { canActivate() { return true; } }
 
 @Controller('payments')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class PaymentsController {
     constructor(private readonly paymentsService: PaymentsService) { }
 
     @Post()
-    @UseGuards(JwtAuthGuard) // Chỉ cho phép người dùng đã đăng nhập tạo yêu cầu thanh toán
+    @UseGuards(JwtAuthGuard)
     async createPaymentUrl(@Req() req: any, @Body() createPaymentDto: CreatePaymentDto) {
-        // req.user.userId sẽ được cung cấp bởi JwtAuthGuard
         const paymentUrl = await this.paymentsService.createVnpayPaymentUrl(req.user.userId, createPaymentDto);
         return { paymentUrl };
     }
 
-    // VNPAY Webhook (callback URL)
-    @Get('webhook') // VNPAY thường gọi GET cho callback
+    @Get('webhook')
     async handleVnPayReturn(@Query() query: any, @Res() res: Response) {
         const result = await this.paymentsService.handleVnPayWebhook(query);
-        // VNPAY mong đợi response JSON
         res.status(HttpStatus.OK).json(result);
     }
 
-    @Post('webhook') // Cũng có thể nhận POST, tùy cấu hình VNPAY
+    @Post('webhook')
     @HttpCode(HttpStatus.OK)
     async handleVnPayWebhookPost(@Body() query: any) {
         return this.paymentsService.handleVnPayWebhook(query);
@@ -55,4 +52,4 @@ export class PaymentsController {
         }
         return payment;
     }
-  }
+}

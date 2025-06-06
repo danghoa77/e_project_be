@@ -1,22 +1,15 @@
 // order-service/src/carts/carts.controller.ts
-import { Controller, Get, Post, Body, Req, UseGuards, Param, Delete, Put } from '@nestjs/common';
+import { Controller, Get, Post, Body, Req, UseGuards, Param, Delete, Put, Logger } from '@nestjs/common';
 import { CartsService } from './carts.service';
 import { AddToCartDto } from './dto/add-to-cart.dto';
 import { RolesGuard, JwtAuthGuard, Role } from '@app/common-auth';
 
-
-
-// class JwtAuthGuard { canActivate() { return true; } }
-// class RolesGuard { canActivate() { return true; } }
-// const Roles = (roles: string[]) => (target: any, key?: string | symbol) => { }; // Dummy decorator
-
-
 @Controller('carts')
-@UseGuards(RolesGuard)
-// @Roles(Role.Customer, Role.Admin) 
 @UseGuards(JwtAuthGuard)
 export class CartsController {
-    constructor(private readonly cartsService: CartsService) { }
+    constructor(private readonly cartsService: CartsService,
+        private readonly logger: Logger
+    ) { }
 
     @Get()
     async getCart(@Req() req: any) {
@@ -45,6 +38,13 @@ export class CartsController {
         @Body('quantity') quantity: number,
     ) {
         return this.cartsService.updateItemQuantity(req.user.userId, productId, variantId, quantity);
+    }
+
+    //check stock of items in cart
+    @Get('validate-stock')
+    async validateCartStock(@Req() req: any) {
+        this.logger.log(`Validating cart stock for user: ${req.user.userId}`);
+        return this.cartsService.validateCartStock(req.user.userId);
     }
 
     @Delete()
