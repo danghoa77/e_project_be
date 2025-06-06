@@ -39,7 +39,7 @@ export class PaymentsService {
         const orderUrl = `http://order-service:3000/orders/${orderId}`;
         let orderData: any;
         try {
-            const response = await firstValueFrom(this.httpService.get(orderUrl));
+            const response = await firstValueFrom(this.httpService.get<any>(orderUrl));
             orderData = response.data;
             if (orderData.status !== 'pending') {
                 throw new BadRequestException('The order is not in payment status.');

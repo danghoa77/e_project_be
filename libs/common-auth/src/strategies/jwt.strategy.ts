@@ -1,12 +1,16 @@
 //parse token and validate user
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, ExtractJwt } from 'passport-jwt';
+import { RedisService } from '../redis/redis.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-    constructor(configService: ConfigService) {
+    constructor(
+        configService: ConfigService,
+        private readonly redisService: RedisService
+    ) {
         super({
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
             ignoreExpiration: false,
@@ -14,7 +18,17 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         });
     }
 
-    async validate(payload: any) {
+    async validate(payload: any): Promise<any> {
+        if (!payload || !payload.sub) {
+            throw new UnauthorizedException('Invalid token payload.');
+        }
+
+        const sessionKey = `session:${payload.sub}`;
+        const sessionToken = await this.redisService.get(sessionKey);
+        if (!sessionToken) {
+            throw new UnauthorizedException('You have been logged out. Please log in again.');
+        }
+
         return { userId: payload.sub, email: payload.email, role: payload.role };
     }
 }

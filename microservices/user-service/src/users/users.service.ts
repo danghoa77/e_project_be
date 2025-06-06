@@ -16,7 +16,7 @@ export class UsersService {
     ) { }
 
     async findByEmail(email: string): Promise<User | null> {
-        return this.userModel.findOne({ email }).exec();
+        return this.userModel.findOne({ email }).select('+password').exec();
     }
 
     async createUser(userData: Partial<User>): Promise<User> {

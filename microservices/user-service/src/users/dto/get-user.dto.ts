@@ -2,8 +2,8 @@
 import { Exclude, Expose } from 'class-transformer';
 
 export class GetUserDto {
-    @Expose()
-    _id: string;
+    // @Expose()
+    // _id: string;
 
     @Expose()
     email: string;

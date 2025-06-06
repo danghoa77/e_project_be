@@ -8,6 +8,7 @@ import { JwtService } from '@nestjs/jwt';
 import { GetUserDto } from '../users/dto/get-user.dto';
 import { plainToClass } from 'class-transformer';
 import { RolesGuard, JwtAuthGuard, Role } from '@app/common-auth';
+import { LocalAuthGuard } from './strategies/local-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -18,7 +19,7 @@ export class AuthController {
         return this.authService.register(registerUserDto);
     }
 
-    @UseGuards(LocalStrategy) //Check email and password with local strategy
+    @UseGuards(LocalAuthGuard) //Check email and password with local strategy
     @Post('login')
     @HttpCode(HttpStatus.OK)
     async login(@Request() req: any) {

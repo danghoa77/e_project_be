@@ -5,13 +5,13 @@ import { Cart } from '../schemas/cart.schema';
 import { AddToCartDto } from './dto/add-to-cart.dto';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { RedisService } from '@app/common-auth'; 
+import { RedisService } from '@app/common-auth';
 
 @Injectable()
 export class CartsService {
     constructor(
         @InjectModel(Cart.name) private cartModel: Model<Cart>,
-        private httpService: HttpService, 
+        private httpService: HttpService,
         private redisService: RedisService, // dùng Redis để cache giỏ hàng
     ) { }
 
@@ -41,7 +41,7 @@ export class CartsService {
         const productUrl = `http://product-service:3000/products/${productId}`;
         let productData: any;
         try {
-            const response = await firstValueFrom(this.httpService.get(productUrl));
+            const response = await firstValueFrom(this.httpService.get<any>(productUrl));
             productData = response.data;
         } catch (error) {
             throw new NotFoundException('Product does not exist or Product Service is unavailable.');
@@ -116,7 +116,7 @@ export class CartsService {
         const productUrl = `http://product-service:3000/products/${productId}`;
         let productData: any;
         try {
-            const response = await firstValueFrom(this.httpService.get(productUrl));
+            const response = await firstValueFrom(this.httpService.get<any>(productUrl));
             productData = response.data;
         } catch (error) {
             throw new NotFoundException('Product does not exist or Product Service is unavailable.');

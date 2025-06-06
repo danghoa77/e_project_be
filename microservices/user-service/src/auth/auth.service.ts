@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { UsersService } from '../users/users.service';
 import { RegisterUserDto } from '../users/dto/register-user.dto';
-// Chúng ta sẽ không cần User hay UserDocument trong file này nữa khi dùng 'any'
+import { UserDocument } from '../schemas/user.schema';
 import { RedisService } from '@app/common-auth';
 import { ConfigService } from '@nestjs/config';
 
@@ -18,16 +18,15 @@ export class AuthService {
         private configService: ConfigService,
     ) { }
 
-    async validateUser(email: string, pass: string): Promise<any> {
+    async validateUser(email: string, pass: string): Promise<UserDocument | null> {
         const user = await this.usersService.findByEmail(email);
         if (user && (await bcrypt.compare(pass, user.password))) {
-            const { password, ...result } = user.toObject();
-            return result;
+            return user as UserDocument;
         }
         return null;
     }
 
-    async login(user: any): Promise<{ access_token: string }> {
+    async login(user: UserDocument): Promise<{ access_token: string }> {
         const payload = { email: user.email, sub: user._id.toString(), role: user.role };
         const accessToken = this.jwtService.sign(payload);
 
@@ -44,6 +43,7 @@ export class AuthService {
     }
 
 
+
     async register(registerUserDto: RegisterUserDto): Promise<{ access_token: string }> {
         const existingUser = await this.usersService.findByEmail(registerUserDto.email);
         if (existingUser) {
@@ -51,8 +51,7 @@ export class AuthService {
         }
         const newUser = await this.usersService.createUser(registerUserDto);
         this.logger.log(`User ${newUser.email} registered successfully.`);
-
-        return this.login(newUser);
+        return this.login(newUser as UserDocument);
     }
 
     async logout(userId: string): Promise<void> {

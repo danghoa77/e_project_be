@@ -139,7 +139,7 @@ export class OrdersService implements OnModuleInit {
                 // Gọi Product Service để tăng lại số lượng tồn kho
                 const updateStockUrl = `http://product-service:3000/products/update-stock/${item.productId}`;
                 await firstValueFrom(
-                    this.httpService.patch(updateStockUrl, {
+                    this.httpService.patch<any>(updateStockUrl, {
                         variantId: item.variantId,
                         quantity: item.quantity,
                         operation: 'increase' // Thêm operation để Product Service biết tăng hay giảm
@@ -180,7 +180,7 @@ export class OrdersService implements OnModuleInit {
                 const productUrl = `http://product-service:3000/products/${cartItem.productId.toHexString()}`;
                 let productData: any;
                 try {
-                    const response = await firstValueFrom(this.httpService.get(productUrl));
+                    const response = await firstValueFrom(this.httpService.get<any>(productUrl));
                     productData = response.data;
                 } catch (error) {
                     throw new NotFoundException(`Product with ID ${cartItem.productId} does not exist.`);
@@ -211,7 +211,7 @@ export class OrdersService implements OnModuleInit {
             for (const item of orderItems) {
                 const updateStockUrl = `http://product-service:3000/products/update-stock/${item.productId}`;
                 await firstValueFrom(
-                    this.httpService.patch(updateStockUrl, {
+                    this.httpService.patch<any>(updateStockUrl, {
                         variantId: item.variantId,
                         quantity: item.quantity,
                         operation: 'decrease' // Thêm operation để Product Service biết tăng hay giảm
