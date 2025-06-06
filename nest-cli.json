@@ -1,49 +1,21 @@
 {
   "$schema": "https://json.schemastore.org/nest-cli",
   "collection": "@nestjs/schematics",
-  "sourceRoot": "microservices/my-ecommerce-monorepo/src",
+  "sourceRoot": "microservices/user-service/src",
   "compilerOptions": {
-    "deleteOutDir": true,
     "webpack": true,
-    "tsConfigPath": "microservices/my-ecommerce-monorepo/tsconfig.app.json"
+    "tsConfigPath": "tsconfig.build.json"
   },
   "monorepo": true,
-  "root": "microservices/my-ecommerce-monorepo",
+  "root": "microservices/user-service",
   "projects": {
-    "common-auth": {
-      "type": "library",
-      "root": "libs/common-auth",
-      "entryFile": "index",
-      "sourceRoot": "libs/common-auth/src",
-      "compilerOptions": {
-        "tsConfigPath": "libs/common-auth/tsconfig.lib.json"
-      }
-    },
-    "my-ecommerce-monorepo": {
+    "user-service": {
       "type": "application",
-      "root": "microservices/my-ecommerce-monorepo",
+      "root": "microservices/user-service",
       "entryFile": "main",
-      "sourceRoot": "microservices/my-ecommerce-monorepo/src",
+      "sourceRoot": "microservices/user-service/src",
       "compilerOptions": {
-        "tsConfigPath": "microservices/my-ecommerce-monorepo/tsconfig.build.json"
-      }
-    },
-    "order-service": {
-      "type": "application",
-      "root": "microservices/order-service",
-      "entryFile": "main",
-      "sourceRoot": "microservices/order-service/src",
-      "compilerOptions": {
-        "tsConfigPath": "microservices/order-service/tsconfig.build.json"
-      }
-    },
-    "payment-service": {
-      "type": "application",
-      "root": "microservices/payment-service",
-      "entryFile": "main",
-      "sourceRoot": "microservices/payment-service/src",
-      "compilerOptions": {
-        "tsConfigPath": "microservices/payment-service/tsconfig.build.json"
+        "tsConfigPath": "microservices/user-service/tsconfig.app.json"
       }
     },
     "product-service": {
@@ -52,25 +24,43 @@
       "entryFile": "main",
       "sourceRoot": "microservices/product-service/src",
       "compilerOptions": {
-        "tsConfigPath": "microservices/product-service/tsconfig.build.json"
+        "tsConfigPath": "microservices/product-service/tsconfig.app.json"
       }
     },
-    "shared": {
-      "type": "library",
-      "root": "libs/shared",
-      "entryFile": "index",
-      "sourceRoot": "libs/shared/src",
-      "compilerOptions": {
-        "tsConfigPath": "libs/shared/tsconfig.lib.json"
-      }
-    },
-    "user-service": {
+    "order-service": {
       "type": "application",
-      "root": "microservices/user-service",
+      "root": "microservices/order-service",
       "entryFile": "main",
-      "sourceRoot": "microservices/user-service/src",
+      "sourceRoot": "microservices/order-service/src",
       "compilerOptions": {
-        "tsConfigPath": "microservices/user-service/tsconfig.build.json"
+        "tsConfigPath": "microservices/order-service/tsconfig.app.json"
+      }
+    },
+    "payment-service": {
+      "type": "application",
+      "root": "microservices/payment-service",
+      "entryFile": "main",
+      "sourceRoot": "microservices/payment-service/src",
+      "compilerOptions": {
+        "tsConfigPath": "microservices/payment-service/tsconfig.app.json"
+      }
+    },
+    "api-gateway": {
+      "type": "application",
+      "root": "api-gateway",
+      "entryFile": "main",
+      "sourceRoot": "api-gateway/src",
+      "compilerOptions": {
+        "tsConfigPath": "api-gateway/tsconfig.app.json"
+      }
+    },
+    "common-auth": {
+      "type": "library",
+      "root": "libs/common-auth",
+      "entryFile": "index",
+      "sourceRoot": "libs/common-auth/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/common-auth/tsconfig.lib.json"
       }
     }
   }

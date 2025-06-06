@@ -5,7 +5,7 @@ import { Model } from 'mongoose';
 import { User, Address } from '../schemas/user.schema';
 import { GetUserDto } from './dto/get-user.dto';
 import { plainToClass } from 'class-transformer';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { RedisService } from '@app/common-auth';
 
 @Injectable()

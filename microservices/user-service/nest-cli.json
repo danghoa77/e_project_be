@@ -2,7 +2,24 @@
   "$schema": "https://json.schemastore.org/nest-cli",
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
+  "projects": {
+    "user-service": {
+      "type": "application",
+      "root": "microservices/user-service",
+      "entryFile": "main",
+      "sourceRoot": "microservices/user-service/src",
+      "compilerOptions": {
+        "deleteOutDir": true,
+        "webpack": false
+      }
+    }
+  },
   "compilerOptions": {
-    "deleteOutDir": true
+    "deleteOutDir": true,
+    "webpack": true,
+    "assets": [
+      "**/*.proto"
+    ],
+    "watchAssets": true
   }
 }

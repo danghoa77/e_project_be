@@ -1,5 +1,5 @@
 // user-service/src/auth/dto/register-user.dto.ts
-import { IsEmail, IsNotEmpty, MinLength, MaxLength, IsString, IsPhoneNumber } from 'class-validator';
+import { IsEmail, IsNotEmpty, MinLength, MaxLength, IsString, IsPhoneNumber, IsIn } from 'class-validator';
 
 export class RegisterUserDto {
     @IsEmail({}, { message: 'Email is not valid.' })
@@ -18,4 +18,8 @@ export class RegisterUserDto {
     @IsNotEmpty({ message: 'Phone number cannot be empty.' })
     @IsPhoneNumber('VN', { message: 'Phone number is not valid.' })
     phone: string;
+
+    @IsNotEmpty({ message: 'Role cannot be empty.' })
+    @IsIn(['customer', 'admin'], { message: 'Role must be either customer or admin.' })
+    role: 'customer' | 'admin';
 }

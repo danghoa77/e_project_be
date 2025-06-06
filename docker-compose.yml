@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # MongoDB Database
+  # --- CÁC DATABASE VÀ REDIS GIỮ NGUYÊN ---
   mongodb:
     image: mongo:6.0
     container_name: ecommerce-mongodb
@@ -15,7 +15,6 @@ services:
     networks:
       - ecommerce-network
 
-  # Redis
   redis:
     image: redis:7.0-alpine
     container_name: ecommerce-redis
@@ -27,16 +26,29 @@ services:
     networks:
       - ecommerce-network
 
+  # --- CÁC MICROSERVICES ĐÃ ĐƯỢC CẬP NHẬT CHO DEV ---
+
   # User Service
   user-service:
     build:
       context: .
       dockerfile: microservices/user-service/Dockerfile
+      target: builder
     container_name: user-service
     env_file:
       - ./.env
+    command: npm run dev:user
     ports:
+      # Cổng trong container (sau dấu :) là 3000 theo mặc định của NestJS
       - "3001:3000"
+    # Thêm 'volumes' để mount mã nguồn cho hot-reloading
+    volumes:
+      - ./microservices/user-service:/usr/src/app/microservices/user-service
+      - ./libs:/usr/src/app/libs # Mount thư mục libs chung
+      - /usr/src/app/node_modules # Loại trừ node_modules để dùng bản trong container
+      - /usr/src/app/dist
+    environment:
+      - NODE_ENV=development # Đặt biến môi trường cho development
     depends_on:
       - mongodb
       - redis
@@ -48,11 +60,20 @@ services:
     build:
       context: .
       dockerfile: microservices/product-service/Dockerfile
+      target: builder
     container_name: product-service
     env_file:
       - ./.env
+    command: npm run dev:product
     ports:
       - "3002:3000"
+    volumes:
+      - ./microservices/product-service:/usr/src/app/microservices/product-service
+      - ./libs:/usr/src/app/libs
+      - /usr/src/app/node_modules
+      - /usr/src/app/dist
+    environment:
+      - NODE_ENV=development
     depends_on:
       - mongodb
       - redis
@@ -65,11 +86,20 @@ services:
     build:
       context: .
       dockerfile: microservices/order-service/Dockerfile
+      target: builder
     container_name: order-service
     env_file:
       - ./.env
+    command: npm run dev:order
     ports:
       - "3003:3000"
+    volumes:
+      - ./microservices/order-service:/usr/src/app/microservices/order-service
+      - ./libs:/usr/src/app/libs
+      - /usr/src/app/node_modules
+      - /usr/src/app/dist
+    environment:
+      - NODE_ENV=development
     depends_on:
       - mongodb
       - redis
@@ -83,11 +113,20 @@ services:
     build:
       context: .
       dockerfile: microservices/payment-service/Dockerfile
+      target: builder
     container_name: payment-service
     env_file:
       - ./.env
+    command: npm run dev:payment
     ports:
       - "3004:3000"
+    volumes:
+      - ./microservices/payment-service:/usr/src/app/microservices/payment-service
+      - ./libs:/usr/src/app/libs
+      - /usr/src/app/node_modules
+      - /usr/src/app/dist
+    environment:
+      - NODE_ENV=development
     depends_on:
       - mongodb
       - redis
@@ -102,8 +141,11 @@ services:
       dockerfile: Dockerfile
     container_name: api-gateway
     ports:
-      - "80:80" # Port cho API Gateway
-      - "443:443" # Cấu hình HTTPS sau này
+      - "80:80"
+      - "443:443"
+    # Mount file config của Nginx để có thể thay đổi mà không cần build lại image
+    volumes:
+      - ./api-gateway/nginx.conf:/etc/nginx/nginx.conf
     depends_on:
       - user-service
       - product-service

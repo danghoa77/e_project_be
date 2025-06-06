@@ -3,10 +3,11 @@ import { Controller, Post, Body, UseGuards, Request, Get, HttpCode, HttpStatus }
 import { AuthService } from './auth.service';
 import { RegisterUserDto } from '../users/dto/register-user.dto';
 import { LoginUserDto } from '../users/dto/login-user.dto';
-
+import { LocalStrategy } from './strategies/local.strategy';
+import { JwtService } from '@nestjs/jwt';
 import { GetUserDto } from '../users/dto/get-user.dto';
 import { plainToClass } from 'class-transformer';
-import { Roles, RolesGuard, JwtAuthGuard, LocalAuthGuard } from '@app/common-auth';
+import { RolesGuard, JwtAuthGuard, Role } from '@app/common-auth';
 
 @Controller('auth')
 export class AuthController {
@@ -17,14 +18,14 @@ export class AuthController {
         return this.authService.register(registerUserDto);
     }
 
-    @UseGuards(LocalAuthGuard) // Sử dụng LocalAuthGuard cho đăng nhập
+    @UseGuards(LocalStrategy) //Check email and password with local strategy
     @Post('login')
     @HttpCode(HttpStatus.OK)
     async login(@Request() req: any) {
         return this.authService.login(req.user);
     }
 
-    @UseGuards(JwtAuthGuard) //JWT để truy cập
+    @UseGuards(JwtAuthGuard) //JWT Check
     @Post('logout')
     @HttpCode(HttpStatus.OK)
     async logout(@Request() req: any) {

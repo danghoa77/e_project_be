@@ -17,13 +17,12 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ProductQueryDto } from './dto/product-query.dto';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { RolesGuard, Roles, Role, JwtAuthGuard } from '@app/common-auth';
+import { RolesGuard, Role, JwtAuthGuard } from '@app/common-auth';
 
 
 
 @Controller('products')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.Admin)
 export class ProductsController {
     constructor(private readonly productsService: ProductsService) { }
 
@@ -36,6 +35,7 @@ export class ProductsController {
         return this.productsService.create(createProductDto, files);
     }
 
+
     @Get()
     async findAll(@Query() query: ProductQueryDto) {
         return this.productsService.findAll(query);
@@ -45,6 +45,8 @@ export class ProductsController {
     async findOne(@Param('id') id: string) {
         return this.productsService.findOne(id);
     }
+
+
     @Patch('update-stock/:id')
     async updateStock(
         @Param('id') productId: string,
@@ -56,8 +58,6 @@ export class ProductsController {
     }
 
     @Patch(':id')
-    // @UseGuards(JwtAuthGuard, RolesGuard)
-    // @Roles(Role.Admin)
     @UseInterceptors(FilesInterceptor('images', 5))
     async update(
         @Param('id') id: string,
@@ -68,8 +68,6 @@ export class ProductsController {
     }
 
     @Delete(':id')
-    // @UseGuards(JwtAuthGuard, RolesGuard)
-    // @Roles('admin')
     async remove(@Param('id') id: string) {
         return this.productsService.remove(id);
     }

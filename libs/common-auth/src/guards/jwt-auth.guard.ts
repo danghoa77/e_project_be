@@ -1,4 +1,5 @@
 // user-service/src/auth/guards/jwt-auth.guard.ts
+// Check token valid or not
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 

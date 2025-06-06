@@ -13,6 +13,6 @@ import { RedisModule } from '@app/common-auth';
     ],
     controllers: [UsersController],
     providers: [UsersService],
-    exports: [UsersService], // Export UsersService để AuthModule có thể sử dụng
+    exports: [UsersService],
 })
 export class UsersModule { }

@@ -30,7 +30,7 @@ RUN npm install --omit=dev --ignore-scripts --prefer-offline
 # Copy the built application artifacts from the builder stage
 COPY --from=builder /usr/src/app/dist/microservices/order-service ./dist
 
-# Cổng mà order-service sẽ lắng nghe (ví dụ: 3003)
+
 EXPOSE 3003
 
 CMD ["node", "dist/main.js"]

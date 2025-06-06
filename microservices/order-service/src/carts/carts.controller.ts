@@ -2,7 +2,7 @@
 import { Controller, Get, Post, Body, Req, UseGuards, Param, Delete, Put } from '@nestjs/common';
 import { CartsService } from './carts.service';
 import { AddToCartDto } from './dto/add-to-cart.dto';
-import { RolesGuard, JwtAuthGuard, Roles } from '@app/common-auth';
+import { RolesGuard, JwtAuthGuard, Role } from '@app/common-auth';
 
 
 
@@ -12,7 +12,9 @@ import { RolesGuard, JwtAuthGuard, Roles } from '@app/common-auth';
 
 
 @Controller('carts')
-// @UseGuards(JwtAuthGuard) // Bảo vệ tất cả các API giỏ hàng
+@UseGuards(RolesGuard)
+// @Roles(Role.Customer, Role.Admin) 
+@UseGuards(JwtAuthGuard)
 export class CartsController {
     constructor(private readonly cartsService: CartsService) { }
 

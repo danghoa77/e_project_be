@@ -1,4 +1,5 @@
 // user-service/src/auth/strategies/local.strategy.ts
+//check password and email with local strategy
 import { Strategy } from 'passport-local';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable, UnauthorizedException } from '@nestjs/common';

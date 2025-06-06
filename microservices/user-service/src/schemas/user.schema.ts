@@ -1,8 +1,8 @@
 // user-service/src/users/schemas/user.schema.ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import { Document, HydratedDocument } from 'mongoose';
 
-// Định nghĩa Address Sub-document
+export type UserDocument = HydratedDocument<User>;
 @Schema({ _id: false })
 export class Address {
     @Prop({ type: String, required: true })

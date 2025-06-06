@@ -138,14 +138,12 @@ export class ProductsService {
             throw new NotFoundException('Product does not exist.');
         }
 
-        // Xử lý xóa ảnh cũ nếu có và upload ảnh mới
         if (files && files.length > 0) {
-            // Xóa ảnh cũ trên Cloudinary
             if (product.images && product.images.length > 0) {
                 const deletePromises = product.images.map(img => this.cloudinaryService.deleteImage(img.cloudinaryId));
                 await Promise.all(deletePromises);
             }
-            // Upload ảnh mới
+            // Upload new images
             const uploadPromises = files.map(file => this.cloudinaryService.uploadImage(file));
             const results = await Promise.all(uploadPromises);
             updateProductDto.images = results.map(res => ({
@@ -153,7 +151,7 @@ export class ProductsService {
                 cloudinaryId: res.public_id,
             }));
         } else if (updateProductDto.images === null) {
-            // Nếu frontend gửi images: null, nghĩa là muốn xóa hết ảnh
+            // If images is set to null, delete existing images
             if (product.images && product.images.length > 0) {
                 const deletePromises = product.images.map(img => this.cloudinaryService.deleteImage(img.cloudinaryId));
                 await Promise.all(deletePromises);
@@ -164,8 +162,8 @@ export class ProductsService {
         Object.assign(product, updateProductDto);
         const updatedProduct = await product.save();
         this.logger.log(`Updated product: ${updatedProduct}`);
-        await this.redisService.del(`product:${id}`); // Xóa cache của sản phẩm cụ thể
-        await this.redisService.del('products:all'); // Xóa cache danh sách sản phẩm
+        await this.redisService.del(`product:${id}`);
+        await this.redisService.del('products:all');
         return updatedProduct;
     }
 
@@ -175,7 +173,7 @@ export class ProductsService {
             throw new NotFoundException('Product does not exist.');
         }
 
-        // Xóa ảnh trên Cloudinary
+
         if (product.images && product.images.length > 0) {
             const deletePromises = product.images.map(img => this.cloudinaryService.deleteImage(img.cloudinaryId));
             await Promise.all(deletePromises);

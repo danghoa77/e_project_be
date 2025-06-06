@@ -3,18 +3,13 @@ import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-
-// Import các Strategy từ thư mục 'strategies'
 import { JwtStrategy } from './strategies/jwt.strategy';
-
-
-// Import RedisModule từ thư mục 'redis'
 import { RedisModule } from './redis/redis.module';
 
 @Module({
   imports: [
     ConfigModule,
-    PassportModule,
+    PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -25,7 +20,7 @@ import { RedisModule } from './redis/redis.module';
     }),
     RedisModule,
   ],
-  
+
   providers: [
     JwtStrategy,
   ],
