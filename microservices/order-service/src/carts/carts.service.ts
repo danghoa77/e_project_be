@@ -156,44 +156,44 @@ export class CartsService {
         }
     }
 
-    async validateCartStock(userId: string): Promise<{ isCheckoutable: boolean; invalidItems: any[] }> {
-        const cart = await this._getFreshCartByUserId(userId);
-        if (!cart || cart.items.length === 0) {
-            return { isCheckoutable: false, invalidItems: [] };
-        }
+    // async validateCartStock(userId: string): Promise<{ isCheckoutable: boolean; invalidItems: any[] }> {
+    //     const cart = await this._getFreshCartByUserId(userId);
+    //     if (!cart || cart.items.length === 0) {
+    //         return { isCheckoutable: false, invalidItems: [] };
+    //     }
 
-        const invalidItems = [];
-        for (const item of cart.items) {
-            try {
-                const variant = await this._getProductVariant(item.productId.toString(), item.variantId);
+    //     const invalidItems: any[] = [];
+    //     for (const item of cart.items) {
+    //         try {
+    //             const variant = await this._getProductVariant(item.productId.toString(), item.variantId);
 
-                if (item.quantity > variant.stock) {
-                    invalidItems.push({
-                        productId: item.productId.toString(),
-                        variantId: item.variantId,
-                        name: variant.name || 'Product', 
-                        size: variant.size,
-                        color: variant.color,
-                        quantityInCart: item.quantity,
-                        actualStock: variant.stock,
-                        message: `Insufficient stock quantity (only ${variant.stock}).`
-                    });
-                }
-            } catch (error) {
-                invalidItems.push({
-                    productId: item.productId.toString(),
-                    variantId: item.variantId,
-                    name: 'Product not found',
-                    quantityInCart: item.quantity,
-                    actualStock: 0,
-                    message: `Product does not exist.`
-                });
-            }
-        }
-        this.logger.log(`Cart validation for user ${userId} completed. Invalid items: ${invalidItems.length}`);
-        return {
-            isCheckoutable: invalidItems.length === 0,
-            invalidItems: invalidItems,
-        };
-    }
+    //             if (item.quantity > variant.stock) {
+    //                 invalidItems.push({
+    //                     productId: item.productId.toString(),
+    //                     variantId: item.variantId,
+    //                     name: variant.name || 'Product',
+    //                     size: variant.size,
+    //                     color: variant.color,
+    //                     quantityInCart: item.quantity,
+    //                     actualStock: variant.stock,
+    //                     message: `Insufficient stock quantity (only ${variant.stock}).`
+    //                 });
+    //             }
+    //         } catch (error) {
+    //             invalidItems.push({
+    //                 productId: item.productId.toString(),
+    //                 variantId: item.variantId,
+    //                 name: 'Product not found',
+    //                 quantityInCart: item.quantity,
+    //                 actualStock: 0,
+    //                 message: `Product does not exist.`
+    //             });
+    //         }
+    //     }
+    //     this.logger.log(`Cart validation for user ${userId} completed. Invalid items: ${invalidItems.length}`);
+    //     return {
+    //         isCheckoutable: invalidItems.length === 0,
+    //         invalidItems: invalidItems,
+    //     };
+    // }
 }

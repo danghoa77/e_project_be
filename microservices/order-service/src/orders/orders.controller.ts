@@ -15,7 +15,7 @@ import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { RolesGuard, JwtAuthGuard, Role } from '@app/common-auth';
 
 
-@UseGuards(RolesGuard, JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('orders')
 export class OrdersController {
     constructor(private readonly ordersService: OrdersService) { }
@@ -27,7 +27,7 @@ export class OrdersController {
         return this.ordersService.createOrder(req.user.userId, createOrderDto);
     }
 
-    @Role('admin')
+
     @Get()
     async getOrders(@Req() req: any) {
         if (req.user.role === 'admin') {
@@ -37,6 +37,8 @@ export class OrdersController {
     }
 
 
+    //search
+    @Role('admin')
     @Get(':id')
     async getOrderById(@Req() req: any, @Param('id') id: string) {
         const order = await this.ordersService.findOrderById(id);

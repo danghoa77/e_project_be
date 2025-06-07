@@ -1,5 +1,5 @@
 // order-service/src/carts/carts.controller.ts
-import { Controller, Get, Post, Body, Req, UseGuards, Param, Delete, Put, Logger } from '@nestjs/common';
+import { Controller, Get, Post, Body, Req, UseGuards, Param, Delete, Put } from '@nestjs/common';
 import { CartsService } from './carts.service';
 import { AddToCartDto } from './dto/add-to-cart.dto';
 import { RolesGuard, JwtAuthGuard, Role } from '@app/common-auth';
@@ -7,8 +7,7 @@ import { RolesGuard, JwtAuthGuard, Role } from '@app/common-auth';
 @Controller('carts')
 @UseGuards(JwtAuthGuard)
 export class CartsController {
-    constructor(private readonly cartsService: CartsService,
-        private readonly logger: Logger
+    constructor(private readonly cartsService: CartsService
     ) { }
 
     @Get()
@@ -41,11 +40,10 @@ export class CartsController {
     }
 
     //check stock of items in cart
-    @Get('validate-stock')
-    async validateCartStock(@Req() req: any) {
-        this.logger.log(`Validating cart stock for user: ${req.user.userId}`);
-        return this.cartsService.validateCartStock(req.user.userId);
-    }
+    // @Get('validate-stock')
+    // async validateCartStock(@Req() req: any) {
+    //     return this.cartsService.validateCartStock(req.user.userId);
+    // }
 
     @Delete()
     async clearCart(@Req() req: any) {

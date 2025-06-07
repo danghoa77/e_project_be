@@ -75,9 +75,7 @@ export class OrdersService implements OnModuleInit {
                 totalPrice += itemPrice * cartItem.quantity;
             }
 
-            // (Giả sử có một API để giảm tồn kho hàng loạt trong ProductService)
-            // Bước 2: Giảm tồn kho ở Product Service
-            // await this._updateStockInProductService(orderItems, 'decrease');
+            await this._decreaseProductStock(orderItems);
 
 
             const newOrder = new this.orderModel({
@@ -121,14 +119,12 @@ export class OrdersService implements OnModuleInit {
         const updateStockUrl = 'http://product-service:3000/products/stock/decrease';
 
         try {
-            // 2. Gửi một request duy nhất đến ProductService
             await firstValueFrom(
                 this.httpService.patch(updateStockUrl, stockUpdatePayload)
             );
             this.logger.log('Successfully called bulk stock decrease endpoint.');
         } catch (error) {
             this.logger.error('Failed to decrease stock in Product Service.', error.response?.data || error.message);
-            // Ném lại lỗi để transaction bên ngoài trong hàm createOrder có thể bắt được và rollback
             throw error;
         }
     }

@@ -18,7 +18,7 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { ProductQueryDto } from './dto/product-query.dto';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { RolesGuard, Role, JwtAuthGuard } from '@app/common-auth';
-
+import { BulkUpdateStockDto } from './dto/bulk-update-stock.dto';
 
 
 @Controller('products')
@@ -57,6 +57,11 @@ export class ProductsController {
         @Body('operation') operation: 'increase' | 'decrease'
     ) {
         return this.productsService.updateVariantStock(productId, variantId, quantity, operation);
+    }
+
+    @Patch('stock/decrease')
+    async decreaseStock(@Body() bulkUpdateStockDto: BulkUpdateStockDto) {
+        return this.productsService.decreaseStockForOrder(bulkUpdateStockDto.items);
     }
 
     @UseGuards(JwtAuthGuard, RolesGuard)

@@ -1,20 +1,21 @@
 // product-service/src/products/products.service.ts
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { InjectModel, InjectConnection } from '@nestjs/mongoose';
+import { Model, Connection } from 'mongoose';
 import { Product } from '../schemas/product.schema';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ProductQueryDto } from './dto/product-query.dto';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { RedisService } from '@app/common-auth';
-
+import { UpdateStockItemDto } from './dto/update-stock-item.dto';
 
 @Injectable()
 export class ProductsService {
     private readonly logger = new Logger(ProductsService.name);
     constructor(
         @InjectModel(Product.name) private productModel: Model<Product>,
+        @InjectConnection() private readonly connection: Connection,
         private cloudinaryService: CloudinaryService,
         private redisService: RedisService,
     ) { }
@@ -66,6 +67,44 @@ export class ProductsService {
 
         return updatedProduct;
     }
+
+    async decreaseStockForOrder(items: UpdateStockItemDto[]): Promise<{ message: string }> {
+        const session = await this.connection.startSession();
+        session.startTransaction();
+        this.logger.log(`Starting transaction to decrease stock for ${items.length} items.`);
+
+        try {
+            for (const item of items) {
+                const product = await this.productModel.findById(item.productId).session(session);
+
+                if (!product) {
+                    throw new NotFoundException(`Product with ID ${item.productId} not found.`);
+                }
+
+                const variant = product.variants.find(v => v._id.toString() === item.variantId);
+                if (!variant) {
+                    throw new BadRequestException(`Variant with ID ${item.variantId} not found.`);
+                }
+                if (variant.stock < item.quantity) {
+                    throw new BadRequestException(`Insufficient stock for product ${product.name}, variant ${variant.size}-${variant.color}.`);
+                }
+
+                variant.stock -= item.quantity;
+                await product.save({ session });
+            }
+            await session.commitTransaction();
+            this.logger.log(`Stock decreased successfully. Transaction committed.`);
+            return { message: 'Stock updated successfully' };
+
+        } catch (error) {
+            await session.abortTransaction();
+            this.logger.error(`Failed to decrease stock. Transaction aborted.`, error.stack);
+            throw error;
+        } finally {
+            session.endSession();
+        }
+    }
+
     async findAll(query: ProductQueryDto): Promise<{ products: Product[]; total: number }> {
         const { category, priceMin, priceMax, size, limit = 10, page = 1, sortBy } = query;
 
