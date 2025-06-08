@@ -1,202 +1,187 @@
-// payment-service/src/payments/payments.service.ts
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger, InternalServerErrorException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Payment } from '../schemas/payment.schema';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { ConfigService } from '@nestjs/config';
-import * as crypto from 'crypto';
+import { createHmac } from 'crypto';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { RedisService } from '@app/common-auth';
 
 @Injectable()
 export class PaymentsService {
+    private readonly logger = new Logger(PaymentsService.name);
     constructor(
         @InjectModel(Payment.name) private paymentModel: Model<Payment>,
         private configService: ConfigService,
-        private httpService: HttpService, // Để gọi Order Service lấy thông tin đơn hàng
+        private httpService: HttpService,
         private redisService: RedisService,
     ) { }
 
-    private generateVnPayHash(params: any): string {
-        const secretKey = this.configService.get<string>('VNPAY_HASH_SECRET');
-        if (!secretKey) {
-            throw new Error('VNPAY_HASH_SECRET is not defined in configuration');
-        }
-        const sortedParams = Object.keys(params)
-            .sort()
-            .map(key => `${key}=${encodeURIComponent(params[key])}`)
-            .join('&');
-        const hmac = crypto.createHmac('sha512', secretKey);
-        return hmac.update(sortedParams).digest('hex');
+    private _formatDate(date: Date): string {
+        const year = date.getFullYear();
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const day = date.getDate().toString().padStart(2, '0');
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        const seconds = date.getSeconds().toString().padStart(2, '0');
+        return `${year}${month}${day}${hours}${minutes}${seconds}`;
     }
 
-    async createVnpayPaymentUrl(userId: Types.ObjectId, createPaymentDto: CreatePaymentDto): Promise<string> {
-        const { orderId, amount } = createPaymentDto;
+    private _generateVnpayHash(params: any, secretKey: string): string {
+        const sortedParams = Object.keys(params)
+            .sort()
+            .reduce((obj, key) => {
+                obj[key] = params[key];
+                return obj;
+            }, {});
 
-        // 1. Kiểm tra đơn hàng có tồn tại và đang ở trạng thái pending không
+        const signData = Object.keys(sortedParams)
+            .map(key => `${key}=${sortedParams[key]}`)
+            .join('&');
+
+        this.logger.log(`[Hashing] Generating hash from data string: "${signData}"`);
+        return createHmac('sha512', secretKey).update(signData).digest('hex');
+    }
+
+    async createVnpayPaymentUrl(
+        userId: string,
+        createPaymentDto: CreatePaymentDto,
+        authToken: string,
+    ): Promise<string> {
+        const { orderId } = createPaymentDto;
         const orderUrl = `http://order-service:3000/orders/${orderId}`;
         let orderData: any;
         try {
-            const response = await firstValueFrom(this.httpService.get<any>(orderUrl));
+            const response = await firstValueFrom(
+                this.httpService.get<any>(orderUrl, {
+                    headers: { 'Authorization': authToken },
+                }),
+            );
             orderData = response.data;
             if (orderData.status !== 'pending') {
-                throw new BadRequestException('The order is not in payment status.');
-            }
-            if (orderData.totalPrice !== amount) {
-                // Bảo mật hơn: luôn lấy amount từ Order Service để tránh giả mạo
-                throw new BadRequestException('Payment amount does not match order.');
+                throw new BadRequestException('Order is not in a payable state.');
             }
         } catch (error) {
-            console.error('Error fetching order for payment:', error.response?.data || error.message);
+            this.logger.error(`Error fetching order ${orderId} for payment`, error.response?.data || error.message);
             throw new BadRequestException('Order does not exist or payment cannot be created.');
         }
 
+        const vnpUrl = this.configService.get<string>('VNPAY_URL');
+        const tmnCode = this.configService.get<string>('VNPAY_TMN_CODE');
+        const secretKey = this.configService.get<string>('VNPAY_HASH_SECRET');
+        const returnUrl = this.configService.get<string>('VNPAY_RETURN_URL');
 
-        // 2. Tạo bản ghi payment trong MongoDB với trạng thái pending
+        if (!vnpUrl || !tmnCode || !secretKey || !returnUrl) {
+            throw new InternalServerErrorException('VNPAY configuration is missing.');
+        }
+
+        const uniqueTxnId = `${orderId}_${Date.now()}`;
         const newPayment = new this.paymentModel({
             orderId: new Types.ObjectId(orderId),
-            userId,
-            amount: orderData.totalPrice, // Sử dụng total price từ order
+            userId: new Types.ObjectId(userId),
+            amount: orderData.totalPrice,
             status: 'pending',
+            transactionId: uniqueTxnId,
         });
         await newPayment.save();
 
-        const vnpUrl = this.configService.get<string>('VNPAY_URL');
-        const tmnCode = this.configService.get<string>('VNPAY_TMN_CODE');
-        const returnUrl = this.configService.get<string>('VNPAY_RETURN_URL');
-
-        const ipAddr = '127.0.0.1'; // Hoặc lấy IP thực từ request nếu cần
-        const currCode = 'VND';
-        const locale = 'vn';
-        const orderInfo = `Thanh toan don hang ${orderId}`;
-        const orderType = 'billpayment';
-        const txnRef = new Date().getTime().toString(); // Mã giao dịch duy nhất
+        const createDate = this._formatDate(new Date());
+        const ipAddr = '127.0.0.1';
 
         let vnp_Params: any = {};
         vnp_Params['vnp_Version'] = '2.1.0';
         vnp_Params['vnp_Command'] = 'pay';
         vnp_Params['vnp_TmnCode'] = tmnCode;
-        vnp_Params['vnp_Amount'] = amount * 100; // VNPAY yêu cầu số tiền * 100 (đơn vị: xu)
-        vnp_Params['vnp_CurrCode'] = currCode;
-        vnp_Params['vnp_TxnRef'] = txnRef;
-        vnp_Params['vnp_OrderInfo'] = orderInfo;
-        vnp_Params['vnp_OrderType'] = orderType;
-        vnp_Params['vnp_Locale'] = locale;
+        vnp_Params['vnp_Locale'] = 'vn';
+        vnp_Params['vnp_CurrCode'] = 'VND';
+        vnp_Params['vnp_TxnRef'] = orderId;
+        vnp_Params['vnp_OrderInfo'] = `Thanh toan don hang ${orderId}`;
+        vnp_Params['vnp_OrderType'] = 'other';
+        vnp_Params['vnp_Amount'] = orderData.totalPrice * 100;
         vnp_Params['vnp_ReturnUrl'] = returnUrl;
         vnp_Params['vnp_IpAddr'] = ipAddr;
-        vnp_Params['vnp_CreateDate'] = new Date().toISOString().replace(/[:.-]/g, ''); // YYYYMMDDHHmmss
+        vnp_Params['vnp_CreateDate'] = createDate;
 
-        // Sort parameters
-        vnp_Params = Object.keys(vnp_Params)
-            .sort()
-            .reduce((obj, key) => {
-                obj[key] = vnp_Params[key];
-                return obj;
-            }, {});
+        const secureHash = this._generateVnpayHash(vnp_Params, secretKey);
+        vnp_Params['vnp_SecureHash'] = secureHash;
 
-        const signData = Object.keys(vnp_Params)
-            .map(key => `${key}=${encodeURIComponent(vnp_Params[key])}`)
-            .join('&');
-
-        const secureHash = this.generateVnPayHash(vnp_Params);
-
-        const paymentUrl = `${vnpUrl}?${signData}&vnp_SecureHash=${secureHash}`;
-
-        // Lưu transactionId vào payment record
-        newPayment.transactionId = txnRef;
-        await newPayment.save();
-
+        const paymentUrl = `${vnpUrl}?${new URLSearchParams(vnp_Params).toString()}`;
+        this.logger.log(`Created VNPAY URL for order ${orderId}`);
         return paymentUrl;
     }
 
-    async handleVnPayWebhook(query: any): Promise<any> {
+    async handleVnpayWebhook(query: any): Promise<{ RspCode: string; Message: string }> {
+        this.logger.debug('Received VNPAY Webhook Query:', query);
+
         const secureHash = query['vnp_SecureHash'];
-        delete query['vnp_SecureHash'];
+        const tmnCodeFromVnPay = query['vnp_TmnCode'];
+        const secretKey = this.configService.get<string>('VNPAY_HASH_SECRET');
+        const tmnCode = this.configService.get<string>('VNPAY_TMN_CODE');
 
-        // Sắp xếp lại query params
-        const sortedParams: any = Object.keys(query)
-            .sort()
-            .reduce((obj, key) => {
-                obj[key] = query[key];
-                return obj;
-            }, {});
-
-        const checkSum = this.generateVnPayHash(sortedParams);
-
-        if (secureHash !== checkSum) {
-            return { RspCode: '97', Message: 'Wrong signature.' };
+        if (!secretKey || tmnCode !== tmnCodeFromVnPay) {
+            this.logger.error(`IPN Error: Invalid TmnCode. Expected ${tmnCode}, got ${tmnCodeFromVnPay}`);
+            return { RspCode: '02', Message: 'Invalid TmnCode' };
         }
 
-        const txnRef = query['vnp_TxnRef'];
-        const responseCode = query['vnp_ResponseCode'];
-        const amount = parseInt(query['vnp_Amount']) / 100; // Số tiền từ VNPAY (chia 100)
-        const transactionId = query['vnp_TransactionNo'];
-        const bankCode = query['vnp_BankCode'];
-        const payDate = query['vnp_PayDate']; // YYYYMMDDHHmmss
+        delete query['vnp_SecureHash'];
+        delete query['vnp_SecureHashType'];
 
-        const payment = await this.paymentModel.findOne({ transactionId: txnRef }).exec();
+        const checkSum = this._generateVnpayHash(query, secretKey);
+        if (secureHash !== checkSum) {
+            this.logger.error(`IPN Error: Wrong signature.`);
+            return { RspCode: '97', Message: 'Wrong signature' };
+        }
+
+        const orderId = query['vnp_TxnRef'];
+        const responseCode = query['vnp_ResponseCode'];
+        const amountFromVnPay = parseInt(query['vnp_Amount']) / 100;
+
+        const payment = await this.paymentModel.findOne({ transactionId: orderId }).exec();
 
         if (!payment) {
-            return { RspCode: '01', Message: 'No transaction found.' };
+            this.logger.error(`IPN Error: Payment record not found for orderId ${orderId}`);
+            return { RspCode: '01', Message: 'Order not found' };
         }
-
-        if (payment.amount !== amount) {
-            return { RspCode: '04', Message: 'Amount is not valid.' };
+        if (payment.amount !== amountFromVnPay) {
+            this.logger.error(`IPN Error: Invalid amount for order ${orderId}. Expected ${payment.amount}, got ${amountFromVnPay}`);
+            return { RspCode: '04', Message: 'Invalid amount' };
         }
-
-        // Kiểm tra trạng thái đã xử lý trước đó chưa
         if (payment.status !== 'pending') {
-            return { RspCode: '02', Message: 'Transaction has been processed.' };
+            this.logger.warn(`IPN Info: Order ${orderId} already processed with status ${payment.status}`);
+            return { RspCode: '02', Message: 'Order already confirmed or cancelled' };
         }
 
-        // Cập nhật trạng thái thanh toán
-        if (responseCode === '00') { // Thanh toán thành công
+        let eventType = '';
+        if (responseCode === '00') {
             payment.status = 'completed';
-            payment.transactionId = transactionId;
-            payment.bankCode = bankCode;
-            payment.payDate = new Date(
-                `${payDate.substring(0, 4)}-${payDate.substring(4, 6)}-${payDate.substring(6, 8)}T${payDate.substring(8, 10)}:${payDate.substring(10, 12)}:${payDate.substring(12, 14)}`
-            );
-            payment.gatewayResponse = query;
-
-            await payment.save();
-
-            // Gửi sự kiện thanh toán thành công qua Redis Stream
-            await this.redisService.getClient().xadd(
-                'payment_events_stream', '*',
-                'eventType', 'payment_completed',
-                'payload', JSON.stringify({
-                    orderId: payment.orderId.toHexString(),
-                    paymentId: (payment._id as Types.ObjectId).toHexString(),
-                    transactionId: payment.transactionId,
-                    amount: payment.amount,
-                    payDate: payment.payDate,
-                }),
-            );
-            console.log(`Payment for order ${payment.orderId} completed. Event published to Redis Stream.`);
-
-            return { RspCode: '00', Message: 'Confirm Success' };
-        } else { // Thanh toán thất bại hoặc lỗi
+            eventType = 'payment_completed';
+        } else {
             payment.status = 'failed';
-            payment.gatewayResponse = query;
-            await payment.save();
-
-            // Gửi sự kiện thanh toán thất bại qua Redis Stream
-            await this.redisService.getClient().xadd(
-                'payment_events_stream', '*',
-                'eventType', 'payment_failed',
-                'payload', JSON.stringify({
-                    orderId: payment.orderId.toHexString(),
-                    paymentId: (payment._id as Types.ObjectId).toHexString(),
-                    responseCode,
-                    transactionId: payment.transactionId, // Lỗi có thể không có transactionId thực
-                }),
-            );
-            console.log(`Payment for order ${payment.orderId} failed. Event published to Redis Stream.`);
-            return { RspCode: '00', Message: 'Confirm Success' }; // Vẫn trả về 00 cho VNPAY nếu đã xử lý
+            eventType = 'payment_failed';
         }
+
+        payment.gatewayTransactionId = query['vnp_TransactionNo'];
+        payment.bankCode = query['vnp_BankCode'];
+        const payDate = query['vnp_PayDate'];
+        payment.payDate = new Date(
+            `${payDate.substring(0, 4)}-${payDate.substring(4, 6)}-${payDate.substring(6, 8)}T${payDate.substring(8, 10)}:${payDate.substring(10, 12)}:${payDate.substring(12, 14)}Z`
+        );
+        payment.gatewayResponse = query;
+
+        await payment.save();
+
+        await this.redisService.getClient().xadd(
+            'payment_events_stream', '*',
+            'eventType', eventType,
+            'payload', JSON.stringify({
+                orderId: payment.orderId.toString(),
+                paymentId: payment._id.toString(),
+            }),
+        );
+        this.logger.log(`Payment for order ${orderId} processed with status '${payment.status}'. Event published.`);
+        return { RspCode: '00', Message: 'Confirm Success' };
     }
 
     async getPaymentByOrderId(orderId: string): Promise<Payment | null> {

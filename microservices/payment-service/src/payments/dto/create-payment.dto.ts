@@ -8,5 +8,5 @@ export class CreatePaymentDto {
 
     @IsNumber({}, { message: 'Amount must be a number.' })
     @Min(1, { message: 'Amount must be greater than 0.' })
-    amount: number; // Có thể bỏ nếu muốn lấy từ Order Service
+    amount?: number;
 }

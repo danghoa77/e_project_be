@@ -20,27 +20,27 @@ import { RolesGuard, JwtAuthGuard, Role } from '@app/common-auth';
 
 
 @Controller('payments')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class PaymentsController {
     constructor(private readonly paymentsService: PaymentsService) { }
 
     @Post()
     @UseGuards(JwtAuthGuard)
     async createPaymentUrl(@Req() req: any, @Body() createPaymentDto: CreatePaymentDto) {
-        const paymentUrl = await this.paymentsService.createVnpayPaymentUrl(req.user.userId, createPaymentDto);
-        return { paymentUrl };
+        const authToken = req.headers.authorization;
+        return this.paymentsService.createVnpayPaymentUrl(req.user.userId, createPaymentDto, authToken);
     }
 
     @Get('webhook')
     async handleVnPayReturn(@Query() query: any, @Res() res: Response) {
-        const result = await this.paymentsService.handleVnPayWebhook(query);
+        const result = await this.paymentsService.handleVnpayWebhook(query);
         res.status(HttpStatus.OK).json(result);
     }
 
     @Post('webhook')
     @HttpCode(HttpStatus.OK)
     async handleVnPayWebhookPost(@Body() query: any) {
-        return this.paymentsService.handleVnPayWebhook(query);
+        return this.paymentsService.handleVnpayWebhook(query);
     }
 
     @Get(':orderId')

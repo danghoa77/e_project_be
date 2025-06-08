@@ -7,13 +7,14 @@ import { PaymentsController } from './payments.controller';
 import { ConfigModule } from '@nestjs/config';
 import { HttpModule } from '@nestjs/axios';
 import { RedisModule } from '@app/common-auth';
-
+import { CommonAuthModule } from '@app/common-auth';
 @Module({
     imports: [
         MongooseModule.forFeature([{ name: Payment.name, schema: PaymentSchema }]),
         ConfigModule,
-        HttpModule, // Để gọi Order Service lấy thông tin đơn hàng
-        RedisModule, // Để publish sự kiện
+        HttpModule,
+        RedisModule,
+        CommonAuthModule
     ],
     controllers: [PaymentsController],
     providers: [PaymentsService],

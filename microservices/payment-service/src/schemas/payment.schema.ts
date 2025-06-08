@@ -1,43 +1,41 @@
-// payment-service/src/payments/schemas/payment.schema.ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import { HydratedDocument, Types } from 'mongoose';
 
-@Schema({
-    timestamps: true,
-    collection: 'payments',
-})
-export class Payment extends Document {
-    @Prop({ type: Types.ObjectId, required: true })
+export type PaymentDocument = HydratedDocument<Payment>;
+
+@Schema({ timestamps: true, collection: 'payments' })
+export class Payment {
+
+    _id: Types.ObjectId;
+
+    @Prop({ type: Types.ObjectId, ref: 'Order', required: true })
     orderId: Types.ObjectId;
 
-    @Prop({ type: Types.ObjectId, required: true })
+    @Prop({ type: Types.ObjectId, ref: 'User', required: true })
     userId: Types.ObjectId;
 
-    @Prop({ type: Number, required: true, min: 0 })
+    @Prop({ required: true })
     amount: number;
 
-    @Prop({
-        type: String,
-        enum: ['pending', 'completed', 'failed'],
-        default: 'pending',
-    })
-    status: 'pending' | 'completed' | 'failed';
+    @Prop({ enum: ['pending', 'completed', 'failed'], default: 'pending' })
+    status: string;
 
-    @Prop({ type: String, unique: true, sparse: true }) // Transaction ID từ VNPAY, có thể null nếu pending
+
+    @Prop({ required: true, unique: true })
     transactionId: string;
 
-    @Prop({ type: String }) // Mã ngân hàng
-    bankCode: string;
 
-    @Prop({ type: Date }) // Ngày thanh toán
-    payDate: Date;
+    @Prop()
+    gatewayTransactionId?: string;
 
-    @Prop({ type: Object }) // Lưu trữ phản hồi đầy đủ từ Gateway
-    gatewayResponse: Record<string, any>;
+    @Prop()
+    bankCode?: string;
+
+    @Prop()
+    payDate?: Date;
+
+    @Prop({ type: Object })
+    gatewayResponse?: any;
 }
 
 export const PaymentSchema = SchemaFactory.createForClass(Payment);
-
-PaymentSchema.index({ orderId: 1 });
-PaymentSchema.index({ userId: 1 });
-// PaymentSchema.index({ transactionId: 1 });

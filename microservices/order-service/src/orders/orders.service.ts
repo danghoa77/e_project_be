@@ -21,19 +21,14 @@ export class OrdersService implements OnModuleInit {
     ) { }
 
     async onModuleInit() {
-        // Khởi tạo Redis Stream consumer khi module khởi động. Logic này của bạn đã tốt.
         // this.setupRedisStreamConsumer().catch(err => this.logger.error('Failed to setup Redis Stream Consumer', err));
     }
 
-    // Các phương thức private của bạn cho Redis Stream và revert stock có thể giữ nguyên...
     // private async setupRedisStreamConsumer() { ... }
     // private async handlePaymentCompleted(payload: any) { ... }
     // private async handlePaymentFailed(payload: any) { ... }
     // private async revertProductStock(items: OrderItem[]): Promise<void> { ... }
 
-    /**
-     * Phương thức chính để tạo đơn hàng, đã được sửa lỗi và tối ưu.
-     */
     async createOrder(userId: string, createOrderDto: CreateOrderDto): Promise<OrderDocument> {
         const session = await this.connection.startSession();
         session.startTransaction();
