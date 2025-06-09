@@ -1,34 +1,33 @@
-# render.yaml - Đã sửa lỗi runtime và ipAllowList
+# render.yaml - Phiên bản cuối cùng đã được xác thực
 
-# Định nghĩa các database được quản lý bởi Render
+# Định nghĩa các database
 databases:
   - name: redis
     plan: free
-    # ipAllowList trống có nghĩa là chỉ các service trong cùng project này được phép kết nối
-    ipAllowList: [] 
+    ipAllowList: [] # Cho phép các service trong project kết nối
 
 # Định nghĩa các service ứng dụng
 services:
-  # Service cho API Gateway - Cổng vào duy nhất
+  # Service cho API Gateway
   - name: api-gateway
-    type: web      # Web service có URL public
+    type: web
     plan: free
-    runtime: docker   # QUAN TRỌNG: Khai báo runtime là docker
+    runtime: docker
     dockerfilePath: ./api-gateway/Dockerfile
     dockerContext: ./api-gateway
     healthCheckPath: /
 
   # Service cho User Microservice
   - name: user-service
-    type: pserv    # Private service không có URL public
+    type: pserv
     plan: free
-    runtime: docker   # QUAN TRỌNG
+    runtime: docker
     dockerfilePath: ./microservices/user-service/Dockerfile
     dockerContext: .
     startCommand: node dist/microservices/user-service/main.js
-    envGroup: ecommerce-secrets # Liên kết đến nhóm biến môi trường
     envVars:
-      - key: REDIS_URL # Render tự động inject URL kết nối Redis
+      - fromGroup: ecommerce-secrets # CÚ PHÁP ĐÚNG
+      - key: REDIS_URL
         fromService:
           type: redis
           name: redis
@@ -42,13 +41,8 @@ services:
     dockerfilePath: ./microservices/product-service/Dockerfile
     dockerContext: .
     startCommand: node dist/microservices/product-service/main.js
-    envGroup: ecommerce-secrets
     envVars:
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: redis
-          property: connectionString
+      - fromGroup: ecommerce-secrets # CÚ PHÁP ĐÚNG
 
   # Service cho Order Microservice
   - name: order-service
@@ -58,8 +52,8 @@ services:
     dockerfilePath: ./microservices/order-service/Dockerfile
     dockerContext: .
     startCommand: node dist/microservices/order-service/main.js
-    envGroup: ecommerce-secrets
     envVars:
+      - fromGroup: ecommerce-secrets # CÚ PHÁP ĐÚNG
       - key: REDIS_URL
         fromService:
           type: redis
@@ -76,8 +70,8 @@ services:
     dockerfilePath: ./microservices/payment-service/Dockerfile
     dockerContext: .
     startCommand: node dist/microservices/payment-service/main.js
-    envGroup: ecommerce-secrets
     envVars:
+      - fromGroup: ecommerce-secrets # CÚ PHÁP ĐÚNG
       - key: REDIS_URL
         fromService:
           type: redis
