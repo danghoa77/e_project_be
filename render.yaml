@@ -24,7 +24,6 @@ services:
     runtime: docker
     dockerfilePath: ./microservices/user-service/Dockerfile
     dockerContext: .
-    startCommand: node dist/microservices/user-service/main.js
     envVars:
       - fromGroup: ecommerce-secrets # CÚ PHÁP ĐÚNG
       - key: REDIS_URL
@@ -40,7 +39,6 @@ services:
     runtime: docker
     dockerfilePath: ./microservices/product-service/Dockerfile
     dockerContext: .
-    startCommand: node dist/microservices/product-service/main.js
     envVars:
       - fromGroup: ecommerce-secrets # CÚ PHÁP ĐÚNG
 
@@ -51,7 +49,6 @@ services:
     runtime: docker
     dockerfilePath: ./microservices/order-service/Dockerfile
     dockerContext: .
-    startCommand: node dist/microservices/order-service/main.js
     envVars:
       - fromGroup: ecommerce-secrets # CÚ PHÁP ĐÚNG
       - key: REDIS_URL
@@ -69,7 +66,6 @@ services:
     runtime: docker
     dockerfilePath: ./microservices/payment-service/Dockerfile
     dockerContext: .
-    startCommand: node dist/microservices/payment-service/main.js
     envVars:
       - fromGroup: ecommerce-secrets # CÚ PHÁP ĐÚNG
       - key: REDIS_URL
