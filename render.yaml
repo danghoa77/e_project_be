@@ -1,0 +1,62 @@
+# render.yaml - File cấu hình hạ tầng cho Render
+
+services:
+  # Service cho Redis (dùng dịch vụ có sẵn của Render)
+  - name: redis
+    type: redis
+    plan: free # Gói miễn phí
+
+  # Service cho API Gateway (Nginx) - Đây là cổng vào duy nhất
+  - name: api-gateway
+    type: web      # 'web' service sẽ có một URL public
+    plan: free
+    dockerfilePath: ./api-gateway/Dockerfile
+    dockerContext: ./api-gateway
+    healthCheck:   # Render cần kiểm tra xem service có sống không
+      path: /
+
+  # Service cho User Microservice
+  - name: user-service
+    type: pserv    # 'pserv' (private service) không có URL public
+    plan: free
+    dockerfilePath: ./microservices/user-service/Dockerfile
+    dockerContext: .
+    startCommand: node dist/microservices/user-service/main.js
+    envVarGroups:
+      - name: ecommerce-secrets # Liên kết đến nhóm biến môi trường đã tạo
+
+  # Service cho Product Microservice
+  - name: product-service
+    type: pserv
+    plan: free
+    dockerfilePath: ./microservices/product-service/Dockerfile
+    dockerContext: .
+    startCommand: node dist/microservices/product-service/main.js
+    envVarGroups:
+      - name: ecommerce-secrets
+
+  # Service cho Order Microservice
+  - name: order-service
+    type: pserv
+    plan: free
+    dockerfilePath: ./microservices/order-service/Dockerfile
+    dockerContext: .
+    startCommand: node dist/microservices/order-service/main.js
+    envVarGroups:
+      - name: ecommerce-secrets
+    envVars: # Thêm các biến môi trường cho việc gọi service khác
+      - key: PRODUCT_SERVICE_URL
+        value: http://product-service:3000 # Giao tiếp nội bộ qua tên service
+
+  # Service cho Payment Microservice
+  - name: payment-service
+    type: pserv
+    plan: free
+    dockerfilePath: ./microservices/payment-service/Dockerfile
+    dockerContext: .
+    startCommand: node dist/microservices/payment-service/main.js
+    envVarGroups:
+      - name: ecommerce-secrets
+    envVars:
+      - key: ORDER_SERVICE_URL
+        value: http://order-service:3000
