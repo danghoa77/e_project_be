@@ -1,4 +1,4 @@
-# render.yaml - Phiên bản đã sửa lỗi cú pháp
+# render.yaml - Phiên bản cuối cùng đã sửa lỗi
 
 services:
   # Service cho Redis
@@ -12,7 +12,7 @@ services:
     plan: free
     dockerfilePath: ./api-gateway/Dockerfile
     dockerContext: ./api-gateway
-    healthCheckPath: /  # SỬA LẠI: Dùng healthCheckPath
+    healthCheckPath: /
 
   # Service cho User Microservice
   - name: user-service
@@ -21,7 +21,8 @@ services:
     dockerfilePath: ./microservices/user-service/Dockerfile
     dockerContext: .
     startCommand: node dist/microservices/user-service/main.js
-    envGroup: ecommerce-secrets # SỬA LẠI: Dùng envGroup (số ít) và truyền thẳng tên group
+    envVars:
+      - fromGroup: ecommerce-secrets # <-- SỬA LẠI: Dùng fromGroup bên trong envVars
 
   # Service cho Product Microservice
   - name: product-service
@@ -30,7 +31,8 @@ services:
     dockerfilePath: ./microservices/product-service/Dockerfile
     dockerContext: .
     startCommand: node dist/microservices/product-service/main.js
-    envGroup: ecommerce-secrets # SỬA LẠI
+    envVars:
+      - fromGroup: ecommerce-secrets # <-- SỬA LẠI
 
   # Service cho Order Microservice
   - name: order-service
@@ -39,11 +41,11 @@ services:
     dockerfilePath: ./microservices/order-service/Dockerfile
     dockerContext: .
     startCommand: node dist/microservices/order-service/main.js
-    envGroup: ecommerce-secrets # SỬA LẠI
     envVars:
+      - fromGroup: ecommerce-secrets # <-- SỬA LẠI
       - key: PRODUCT_SERVICE_URL
         value: http://product-service:3000
-      - key: USER_SERVICE_URL # Bổ sung cho việc lấy địa chỉ user khi tạo đơn hàng
+      - key: USER_SERVICE_URL
         value: http://user-service:3000
 
   # Service cho Payment Microservice
@@ -53,7 +55,7 @@ services:
     dockerfilePath: ./microservices/payment-service/Dockerfile
     dockerContext: .
     startCommand: node dist/microservices/payment-service/main.js
-    envGroup: ecommerce-secrets # SỬA LẠI
     envVars:
+      - fromGroup: ecommerce-secrets # <-- SỬA LẠI
       - key: ORDER_SERVICE_URL
         value: http://order-service:3000
