@@ -1,61 +1,87 @@
-# render.yaml - Phiên bản cuối cùng đã sửa lỗi
+# render.yaml - Đã sửa lỗi runtime và ipAllowList
 
-services:
-  # Service cho Redis
+# Định nghĩa các database được quản lý bởi Render
+databases:
   - name: redis
-    type: redis
     plan: free
+    # ipAllowList trống có nghĩa là chỉ các service trong cùng project này được phép kết nối
+    ipAllowList: [] 
 
-  # Service cho API Gateway
+# Định nghĩa các service ứng dụng
+services:
+  # Service cho API Gateway - Cổng vào duy nhất
   - name: api-gateway
-    type: web
+    type: web      # Web service có URL public
     plan: free
+    runtime: docker   # QUAN TRỌNG: Khai báo runtime là docker
     dockerfilePath: ./api-gateway/Dockerfile
     dockerContext: ./api-gateway
     healthCheckPath: /
 
   # Service cho User Microservice
   - name: user-service
-    type: pserv
+    type: pserv    # Private service không có URL public
     plan: free
+    runtime: docker   # QUAN TRỌNG
     dockerfilePath: ./microservices/user-service/Dockerfile
     dockerContext: .
     startCommand: node dist/microservices/user-service/main.js
+    envGroup: ecommerce-secrets # Liên kết đến nhóm biến môi trường
     envVars:
-      - fromGroup: ecommerce-secrets # <-- SỬA LẠI: Dùng fromGroup bên trong envVars
+      - key: REDIS_URL # Render tự động inject URL kết nối Redis
+        fromService:
+          type: redis
+          name: redis
+          property: connectionString
 
   # Service cho Product Microservice
   - name: product-service
     type: pserv
     plan: free
+    runtime: docker
     dockerfilePath: ./microservices/product-service/Dockerfile
     dockerContext: .
     startCommand: node dist/microservices/product-service/main.js
+    envGroup: ecommerce-secrets
     envVars:
-      - fromGroup: ecommerce-secrets # <-- SỬA LẠI
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: redis
+          property: connectionString
 
   # Service cho Order Microservice
   - name: order-service
     type: pserv
     plan: free
+    runtime: docker
     dockerfilePath: ./microservices/order-service/Dockerfile
     dockerContext: .
     startCommand: node dist/microservices/order-service/main.js
+    envGroup: ecommerce-secrets
     envVars:
-      - fromGroup: ecommerce-secrets # <-- SỬA LẠI
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: redis
+          property: connectionString
       - key: PRODUCT_SERVICE_URL
         value: http://product-service:3000
-      - key: USER_SERVICE_URL
-        value: http://user-service:3000
 
   # Service cho Payment Microservice
   - name: payment-service
     type: pserv
     plan: free
+    runtime: docker
     dockerfilePath: ./microservices/payment-service/Dockerfile
     dockerContext: .
     startCommand: node dist/microservices/payment-service/main.js
+    envGroup: ecommerce-secrets
     envVars:
-      - fromGroup: ecommerce-secrets # <-- SỬA LẠI
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: redis
+          property: connectionString
       - key: ORDER_SERVICE_URL
         value: http://order-service:3000
