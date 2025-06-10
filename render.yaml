@@ -22,7 +22,7 @@ services:
     runtime: docker
     dockerfilePath: ./microservices/user-service/Dockerfile
     dockerContext: .
-    healthCheckPath: /api # Đường dẫn health check cho NestJS
+    healthCheckPath: /api/health
 
   # Service cho Product Microservice
   - name: product-service
@@ -31,7 +31,7 @@ services:
     runtime: docker
     dockerfilePath: ./microservices/product-service/Dockerfile
     dockerContext: .
-    healthCheckPath: /api
+    healthCheckPath: /api/health
 
   # Service cho Order Microservice
   - name: order-service
@@ -40,7 +40,7 @@ services:
     runtime: docker
     dockerfilePath: ./microservices/order-service/Dockerfile
     dockerContext: .
-    healthCheckPath: /api
+    healthCheckPath: /api/health
 
   # Service cho Payment Microservice
   - name: payment-service
@@ -49,4 +49,4 @@ services:
     runtime: docker
     dockerfilePath: ./microservices/payment-service/Dockerfile
     dockerContext: .
-    healthCheckPath: /api
+    healthCheckPath: /api/health
