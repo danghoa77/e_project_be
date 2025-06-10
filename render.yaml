@@ -22,7 +22,10 @@ services:
     runtime: docker
     dockerfilePath: ./microservices/user-service/Dockerfile
     dockerContext: .
-    healthCheckPath: /health # Giả sử bạn không dùng global prefix /api
+    healthCheckPath: /health 
+    envVars:
+    - key: JWT_SECRET
+      value: supersecretjwtkey
 
   # Service cho Product Microservice
   - name: product-service
@@ -32,6 +35,9 @@ services:
     dockerfilePath: ./microservices/product-service/Dockerfile
     dockerContext: .
     healthCheckPath: /health
+    envVars:
+    - key: JWT_SECRET
+      value: supersecretjwtkey
 
   # Service cho Order Microservice
   - name: order-service
@@ -41,6 +47,9 @@ services:
     dockerfilePath: ./microservices/order-service/Dockerfile
     dockerContext: .
     healthCheckPath: /health
+    envVars:
+    - key: JWT_SECRET
+      value: supersecretjwtkey
 
   # Service cho Payment Microservice
   - name: payment-service
@@ -50,3 +59,6 @@ services:
     dockerfilePath: ./microservices/payment-service/Dockerfile
     dockerContext: .
     healthCheckPath: /health
+    envVars:
+    - key: JWT_SECRET
+      value: supersecretjwtkey
