@@ -6,6 +6,8 @@ import { PaymentsModule } from './payments/payments.module';
 import { RedisModule } from '@app/common-auth';
 import { HttpModule } from '@nestjs/axios';
 import { AppController } from './app.controller';
+import { AppService } from './app.service';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -24,6 +26,6 @@ import { AppController } from './app.controller';
     HttpModule,
   ],
   controllers: [AppController],
-  providers: [],
+  providers: [AppService],
 })
 export class AppModule { }

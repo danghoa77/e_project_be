@@ -6,6 +6,7 @@ import { ProductsModule } from './products/products.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { RedisModule } from '@app/common-auth';
 import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 @Module({
   imports: [
@@ -25,7 +26,7 @@ import { AppController } from './app.controller';
     RedisModule,
   ],
   controllers: [AppController],
-  providers: [],
+  providers: [AppService],
 
 })
 

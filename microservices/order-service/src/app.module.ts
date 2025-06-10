@@ -7,6 +7,8 @@ import { CartsModule } from './carts/carts.module';
 import { RedisModule } from '@app/common-auth';
 import { HttpModule } from '@nestjs/axios';
 import { AppController } from './app.controller';
+import { AppService } from './app.service';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -26,6 +28,6 @@ import { AppController } from './app.controller';
     RedisModule,
   ],
   controllers: [AppController],
-  providers: [],
+  providers: [AppService],
 })
 export class AppModule { }
