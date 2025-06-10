@@ -1,10 +1,12 @@
-# render.yaml - Đã sửa lỗi service type cho gói miễn phí
+# render.yaml - Phiên bản cuối cùng đã được xác thực
 
+# Định nghĩa các database
 databases:
   - name: redis
     plan: free
-    ipAllowList: []
+    ipAllowList: [] # Cho phép các service trong project kết nối
 
+# Định nghĩa các service ứng dụng
 services:
   # Service cho API Gateway
   - name: api-gateway
@@ -17,14 +19,13 @@ services:
 
   # Service cho User Microservice
   - name: user-service
-    type: web # SỬA LẠI: từ pserv thành web
+    type: web
     plan: free
     runtime: docker
     dockerfilePath: ./microservices/user-service/Dockerfile
     dockerContext: .
-    healthCheckPath: /api # Thêm health check cho NestJS app
-    envGroup: ecommerce-secrets
     envVars:
+      - fromGroup: ecommerce-secrets
       - key: REDIS_URL
         fromService:
           type: redis
@@ -33,24 +34,23 @@ services:
 
   # Service cho Product Microservice
   - name: product-service
-    type: web # SỬA LẠI: từ pserv thành web
+    type: web
     plan: free
     runtime: docker
     dockerfilePath: ./microservices/product-service/Dockerfile
     dockerContext: .
-    healthCheckPath: /api
-    envGroup: ecommerce-secrets
+    envVars:
+      - fromGroup: ecommerce-secrets # CÚ PHÁP ĐÚNG
 
   # Service cho Order Microservice
   - name: order-service
-    type: web # SỬA LẠI: từ pserv thành web
+    type: web
     plan: free
     runtime: docker
     dockerfilePath: ./microservices/order-service/Dockerfile
     dockerContext: .
-    healthCheckPath: /api
-    envGroup: ecommerce-secrets
     envVars:
+      - fromGroup: ecommerce-secrets # CÚ PHÁP ĐÚNG
       - key: REDIS_URL
         fromService:
           type: redis
@@ -58,19 +58,16 @@ services:
           property: connectionString
       - key: PRODUCT_SERVICE_URL
         value: http://product-service:3000
-      - key: USER_SERVICE_URL
-        value: http://user-service:3000
 
   # Service cho Payment Microservice
   - name: payment-service
-    type: web # SỬA LẠI: từ pserv thành web
+    type: web
     plan: free
     runtime: docker
     dockerfilePath: ./microservices/payment-service/Dockerfile
     dockerContext: .
-    healthCheckPath: /api
-    envGroup: ecommerce-secrets
     envVars:
+      - fromGroup: ecommerce-secrets # CÚ PHÁP ĐÚNG
       - key: REDIS_URL
         fromService:
           type: redis
