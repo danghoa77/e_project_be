@@ -1,9 +1,9 @@
-# render.yaml - Phiên bản đơn giản hóa để tạo service
+# render.yaml - Phiên bản siêu đơn giản chỉ để tạo service
 
 databases:
   - name: redis
     plan: free
-    ipAllowList: []
+    ipAllowList: [] # Trống có nghĩa là các service trong project được phép kết nối
 
 services:
   # Service cho API Gateway
@@ -22,8 +22,7 @@ services:
     runtime: docker
     dockerfilePath: ./microservices/user-service/Dockerfile
     dockerContext: .
-    healthCheckPath: /api
-    envGroup: ecommerce-secrets
+    healthCheckPath: /api # Đường dẫn health check cho NestJS
 
   # Service cho Product Microservice
   - name: product-service
@@ -33,7 +32,6 @@ services:
     dockerfilePath: ./microservices/product-service/Dockerfile
     dockerContext: .
     healthCheckPath: /api
-    envGroup: ecommerce-secrets
 
   # Service cho Order Microservice
   - name: order-service
@@ -43,11 +41,6 @@ services:
     dockerfilePath: ./microservices/order-service/Dockerfile
     dockerContext: .
     healthCheckPath: /api
-    envGroup: ecommerce-secrets
-    # Chúng ta vẫn cần các biến này để các service gọi nhau
-    envVars:
-      - key: PRODUCT_SERVICE_URL
-        value: http://product-service:3000
 
   # Service cho Payment Microservice
   - name: payment-service
@@ -57,7 +50,3 @@ services:
     dockerfilePath: ./microservices/payment-service/Dockerfile
     dockerContext: .
     healthCheckPath: /api
-    envGroup: ecommerce-secrets
-    envVars:
-      - key: ORDER_SERVICE_URL
-        value: http://order-service:3000
