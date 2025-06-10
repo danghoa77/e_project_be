@@ -1,9 +1,9 @@
-# render.yaml - Phiên bản cuối cùng, an toàn và đúng chuẩn
+# render.yaml - Chỉ khai báo service, không có biến môi trường
 
 databases:
   - name: redis
     plan: free
-    ipAllowList: []
+    ipAllowList: [] # Trống có nghĩa là các service trong project được phép kết nối
 
 services:
   # Service cho API Gateway
@@ -14,8 +14,6 @@ services:
     dockerfilePath: ./api-gateway/Dockerfile
     dockerContext: ./api-gateway
     healthCheckPath: /
-    # Gateway sẽ lấy các biến ..._SERVICE_URL từ group
-    envGroup: ecommerce-secrets 
 
   # Service cho User Microservice
   - name: user-service
@@ -24,9 +22,20 @@ services:
     runtime: docker
     dockerfilePath: ./microservices/user-service/Dockerfile
     dockerContext: .
-    healthCheckPath: /health
-    # Chỉ cần liên kết đến group
-    envGroup: ecommerce-secrets
+    healthCheckPath: /health 
+    envVars:
+    - key: JWT_SECRET
+      value: supersecretjwtkey
+    - key: REDIS_HOST  
+      value: cluster0.pis3u.mongodb.net
+    - key: MONGO_USERNAME
+      value: danghoa
+    - key: MONGO_PASSWORD
+      value: danghoa
+    - key: MONGO_HOST
+      value: cluster0.pis3u.mongodb.net
+    - key: MONGO_DATABASE
+      value: FinalE 
 
   # Service cho Product Microservice
   - name: product-service
@@ -36,7 +45,17 @@ services:
     dockerfilePath: ./microservices/product-service/Dockerfile
     dockerContext: .
     healthCheckPath: /health
-    envGroup: ecommerce-secrets
+    envVars:
+    - key: JWT_SECRET
+      value: supersecretjwtkey
+    - key: MONGO_USERNAME
+      value: danghoa
+    - key: MONGO_PASSWORD
+      value: danghoa
+    - key: MONGO_HOST
+      value: cluster0.pis3u.mongodb.net
+    - key: MONGO_DATABASE
+      value: FinalE 
 
   # Service cho Order Microservice
   - name: order-service
@@ -46,7 +65,17 @@ services:
     dockerfilePath: ./microservices/order-service/Dockerfile
     dockerContext: .
     healthCheckPath: /health
-    envGroup: ecommerce-secrets
+    envVars:
+    - key: JWT_SECRET
+      value: supersecretjwtkey
+    - key: MONGO_USERNAME
+      value: danghoa
+    - key: MONGO_PASSWORD
+      value: danghoa
+    - key: MONGO_HOST
+      value: cluster0.pis3u.mongodb.net
+    - key: MONGO_DATABASE
+      value: FinalE 
 
   # Service cho Payment Microservice
   - name: payment-service
@@ -56,4 +85,14 @@ services:
     dockerfilePath: ./microservices/payment-service/Dockerfile
     dockerContext: .
     healthCheckPath: /health
-    envGroup: ecommerce-secrets
+    envVars:
+    - key: JWT_SECRET
+      value: supersecretjwtkey
+    - key: MONGO_USERNAME
+      value: danghoa
+    - key: MONGO_PASSWORD
+      value: danghoa
+    - key: MONGO_HOST
+      value: cluster0.pis3u.mongodb.net
+    - key: MONGO_DATABASE
+      value: FinalE 
