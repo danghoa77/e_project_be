@@ -26,6 +26,15 @@ services:
     envVars:
     - key: JWT_SECRET
       value: supersecretjwtkey
+    - key: REDIS_HOST   
+    - key: MONGO_USERNAME
+      value: danghoa
+    - key: MONGO_PASSWORD
+      value: danghoa
+    - key: MONGO_HOST
+      value: cluster0.pis3u.mongodb.net
+    - key: MONGO_DATABASE
+      value: FinalE 
 
   # Service cho Product Microservice
   - name: product-service
@@ -38,6 +47,14 @@ services:
     envVars:
     - key: JWT_SECRET
       value: supersecretjwtkey
+    - key: MONGO_USERNAME
+      value: danghoa
+    - key: MONGO_PASSWORD
+      value: danghoa
+    - key: MONGO_HOST
+      value: cluster0.pis3u.mongodb.net
+    - key: MONGO_DATABASE
+      value: FinalE 
 
   # Service cho Order Microservice
   - name: order-service
@@ -50,6 +67,14 @@ services:
     envVars:
     - key: JWT_SECRET
       value: supersecretjwtkey
+    - key: MONGO_USERNAME
+      value: danghoa
+    - key: MONGO_PASSWORD
+      value: danghoa
+    - key: MONGO_HOST
+      value: cluster0.pis3u.mongodb.net
+    - key: MONGO_DATABASE
+      value: FinalE 
 
   # Service cho Payment Microservice
   - name: payment-service
@@ -62,3 +87,11 @@ services:
     envVars:
     - key: JWT_SECRET
       value: supersecretjwtkey
+    - key: MONGO_USERNAME
+      value: danghoa
+    - key: MONGO_PASSWORD
+      value: danghoa
+    - key: MONGO_HOST
+      value: cluster0.pis3u.mongodb.net
+    - key: MONGO_DATABASE
+      value: FinalE 
