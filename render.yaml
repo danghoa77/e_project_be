@@ -1,0 +1,76 @@
+# render.yaml - Deploy các service riêng biệt
+
+# Định nghĩa các database được quản lý bởi Render
+databases:
+  - name: redis
+    plan: free
+    ipAllowList: [] # Trống có nghĩa là các service trong project được phép kết nối
+
+# Định nghĩa các service ứng dụng
+services:
+  # Service cho API Gateway - Cổng vào duy nhất
+  - name: api-gateway
+    type: web
+    plan: free
+    runtime: docker
+    dockerfilePath: ./api-gateway/Dockerfile
+    dockerContext: ./api-gateway
+    healthCheckPath: /
+    # Biến môi trường để gateway biết địa chỉ các service khác
+    envVars:
+      - key: USER_SERVICE_URL
+        value: user-service:3000
+      - key: PRODUCT_SERVICE_URL
+        value: product-service:3000
+      - key: ORDER_SERVICE_URL
+        value: order-service:3000
+      - key: PAYMENT_SERVICE_URL
+        value: payment-service:3000
+
+  # Service cho User Microservice
+  - name: user-service
+    type: web      # Dùng 'web' service cho gói miễn phí
+    plan: free
+    runtime: docker   # Khai báo build bằng Dockerfile
+    dockerfilePath: ./microservices/user-service/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health # Đường dẫn health check không có /api
+    envVars:
+      - fromGroup: ecommerce-secrets # Liên kết đến nhóm biến môi trường
+
+  # Service cho Product Microservice
+  - name: product-service
+    type: web
+    plan: free
+    runtime: docker
+    dockerfilePath: ./microservices/product-service/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - fromGroup: ecommerce-secrets
+
+  # Service cho Order Microservice
+  - name: order-service
+    type: web
+    plan: free
+    runtime: docker
+    dockerfilePath: ./microservices/order-service/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - fromGroup: ecommerce-secrets
+      - key: PRODUCT_SERVICE_URL
+        value: http://product-service:3000
+
+  # Service cho Payment Microservice
+  - name: payment-service
+    type: web
+    plan: free
+    runtime: docker
+    dockerfilePath: ./microservices/payment-service/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - fromGroup: ecommerce-secrets
+      - key: ORDER_SERVICE_URL
+        value: http://order-service:3000
