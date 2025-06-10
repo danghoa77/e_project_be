@@ -1,79 +1,52 @@
-# Exported from Render on 2025-06-10T09:38:49Z
+# render.yaml - Phiên bản siêu đơn giản chỉ để tạo service
+
 databases:
-- name: redis
-  databaseName: redis_g04h
-  user: redis_g04h_user
-  plan: free
-  region: oregon
-  ipAllowList: []
-  postgresMajorVersion: "16"
+  - name: redis
+    plan: free
+    ipAllowList: [] # Trống có nghĩa là các service trong project được phép kết nối
+
 services:
-- type: web
-  name: api-gateway
-  runtime: docker
-  repo: https://github.com/danghoa77/e_project
-  plan: free
-  envVars:
-  - key: PAYMENT_SERVICE_URL
-    sync: false
-  - key: ORDER_SERVICE_URL
-    sync: false
-  - key: PRODUCT_SERVICE_URL
-    sync: false
-  - key: USER_SERVICE_URL
-    sync: false
-  - fromGroup: ecommerce-secrets
-  region: oregon
-  healthCheckPath: /
-  dockerContext: ./api-gateway
-  dockerfilePath: ./api-gateway/Dockerfile
-  autoDeployTrigger: commit
-- type: web
-  name: payment-service
-  runtime: docker
-  repo: https://github.com/danghoa77/e_project
-  plan: free
-  envVars:
-  - fromGroup: ecommerce-secrets
-  region: oregon
-  healthCheckPath: /api
-  dockerContext: .
-  dockerfilePath: ./microservices/payment-service/Dockerfile
-  autoDeployTrigger: commit
-- type: web
-  name: order-service
-  runtime: docker
-  repo: https://github.com/danghoa77/e_project
-  plan: free
-  envVars:
-  - fromGroup: ecommerce-secrets
-  region: oregon
-  healthCheckPath: /api
-  dockerContext: .
-  dockerfilePath: ./microservices/order-service/Dockerfile
-  autoDeployTrigger: commit
-- type: web
-  name: product-service
-  runtime: docker
-  repo: https://github.com/danghoa77/e_project
-  plan: free
-  envVars:
-  - fromGroup: ecommerce-secrets
-  region: oregon
-  healthCheckPath: /api
-  dockerContext: .
-  dockerfilePath: ./microservices/product-service/Dockerfile
-  autoDeployTrigger: commit
-- type: web
-  name: user-service
-  runtime: docker
-  repo: https://github.com/danghoa77/e_project
-  plan: free
-  envVars:
-  - fromGroup: ecommerce-secrets
-  region: oregon
-  healthCheckPath: /api
-  dockerContext: .
-  dockerfilePath: ./microservices/user-service/Dockerfile
-  autoDeployTrigger: commit
-version: "1"
+  # Service cho API Gateway
+  - name: api-gateway
+    type: web
+    plan: free
+    runtime: docker
+    dockerfilePath: ./api-gateway/Dockerfile
+    dockerContext: ./api-gateway
+    healthCheckPath: /
+
+  # Service cho User Microservice
+  - name: user-service
+    type: web
+    plan: free
+    runtime: docker
+    dockerfilePath: ./microservices/user-service/Dockerfile
+    dockerContext: .
+    healthCheckPath: /api # Đường dẫn health check cho NestJS
+
+  # Service cho Product Microservice
+  - name: product-service
+    type: web
+    plan: free
+    runtime: docker
+    dockerfilePath: ./microservices/product-service/Dockerfile
+    dockerContext: .
+    healthCheckPath: /api
+
+  # Service cho Order Microservice
+  - name: order-service
+    type: web
+    plan: free
+    runtime: docker
+    dockerfilePath: ./microservices/order-service/Dockerfile
+    dockerContext: .
+    healthCheckPath: /api
+
+  # Service cho Payment Microservice
+  - name: payment-service
+    type: web
+    plan: free
+    runtime: docker
+    dockerfilePath: ./microservices/payment-service/Dockerfile
+    dockerContext: .
+    healthCheckPath: /api
