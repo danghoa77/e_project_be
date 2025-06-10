@@ -9,11 +9,12 @@
 # # Exposed port (port 80 đã được định nghĩa trong docker-compose.yml)
 # EXPOSE 80
 
-# Sử dụng image Nginx có sẵn gettext để dùng lệnh envsubst
+# api-gateway/Dockerfile
+
 FROM nginx:stable-alpine
 
-# Copy file template vào thư mục template của Nginx
-COPY conf.d/ecommerce.conf.template /etc/nginx/templates/default.conf.template
+# Copy file cấu hình chính
+COPY nginx.conf /etc/nginx/nginx.conf
 
-# Lệnh CMD mặc định của image Nginx sẽ tự động tìm các file .template,
-# thay thế các biến môi trường và tạo ra file config cuối cùng, sau đó khởi động server.
+# Copy file template vào thư mục mà entrypoint của Nginx sẽ tự động xử lý
+COPY conf.d/ecommerce.conf.template /etc/nginx/templates/default.conf.template
