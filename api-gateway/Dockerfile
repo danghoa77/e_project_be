@@ -1,10 +1,12 @@
-FROM nginx:alpine
+# api-gateway/Dockerfile
 
-# Xóa file cấu hình Nginx mặc định
+FROM nginx:stable-alpine
+
+# Xóa file config mặc định
 RUN rm /etc/nginx/conf.d/default.conf
 
-# Sao chép file cấu hình của chúng ta
-COPY nginx.conf /etc/nginx/conf.d/ecommerce.conf
+# Copy file cấu hình chính
+COPY nginx.conf /etc/nginx/nginx.conf
 
-# Exposed port (port 80 đã được định nghĩa trong docker-compose.yml)
-EXPOSE 80
+# Copy toàn bộ thư mục cấu hình phụ
+COPY conf.d/ /etc/nginx/conf.d/

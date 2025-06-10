@@ -1,0 +1,79 @@
+# api-gateway/conf.d/ecommerce.conf
+
+# Định nghĩa các nhóm server (upstream) cho mỗi microservice
+upstream user_service {
+    server user-service:3000;
+}
+upstream product_service {
+    server product-service:3000;
+}
+upstream order_service {
+    server order-service:3000;
+}
+upstream payment_service {
+    server payment-service:3000;
+}
+
+# Cấu hình server chính để lắng nghe request
+server {
+    listen 80;
+    server_name localhost;
+
+    # Cấu hình proxy chung
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    # Định tuyến các request
+    location /api/auth { proxy_pass http://user_service/api/auth; }
+    location /api/users { proxy_pass http://user_service/api/users; }
+    location /api/products { proxy_pass http://product_service/api/products; }
+    location /api/carts { proxy_pass http://order_service/api/carts; }
+    location /api/orders { proxy_pass http://order_service/api/orders; }
+    location /api/payments { proxy_pass http://payment_service/api/payments; }
+
+    location / {
+        return 200 'API Gateway is running!';
+        add_header Content-Type text/plain;
+    }
+}# api-gateway/conf.d/ecommerce.conf
+
+# Định nghĩa các nhóm server (upstream) cho mỗi microservice
+upstream user_service {
+    server user-service:3000;
+}
+upstream product_service {
+    server product-service:3000;
+}
+upstream order_service {
+    server order-service:3000;
+}
+upstream payment_service {
+    server payment-service:3000;
+}
+
+# Cấu hình server chính để lắng nghe request
+server {
+    listen 80;
+    server_name localhost;
+
+    # Cấu hình proxy chung
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    # Định tuyến các request
+    location /api/auth { proxy_pass http://user_service/api/auth; }
+    location /api/users { proxy_pass http://user_service/api/users; }
+    location /api/products { proxy_pass http://product_service/api/products; }
+    location /api/carts { proxy_pass http://order_service/api/carts; }
+    location /api/orders { proxy_pass http://order_service/api/orders; }
+    location /api/payments { proxy_pass http://payment_service/api/payments; }
+
+    location / {
+        return 200 'API Gateway is running!';
+        add_header Content-Type text/plain;
+    }
+}

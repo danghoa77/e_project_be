@@ -1,7 +1,6 @@
 version: '3.8'
 
 services:
-  # --- CÁC DATABASE VÀ REDIS GIỮ NGUYÊN ---
   mongodb:
     image: mongo:6.0
     container_name: ecommerce-mongodb
@@ -26,7 +25,6 @@ services:
     networks:
       - ecommerce-network
 
-  # --- CÁC MICROSERVICES ĐÃ ĐƯỢC CẬP NHẬT CHO DEV ---
 
   # User Service
   user-service:
@@ -39,16 +37,14 @@ services:
       - ./.env
     command: npm run dev:user
     ports:
-      # Cổng trong container (sau dấu :) là 3000 theo mặc định của NestJS
       - "3001:3000"
-    # Thêm 'volumes' để mount mã nguồn cho hot-reloading
     volumes:
       - ./microservices/user-service:/usr/src/app/microservices/user-service
-      - ./libs:/usr/src/app/libs # Mount thư mục libs chung
-      - /usr/src/app/node_modules # Loại trừ node_modules để dùng bản trong container
+      - ./libs:/usr/src/app/libs # Mount libs 
+      - /usr/src/app/node_modules 
       - /usr/src/app/dist
     environment:
-      - NODE_ENV=development # Đặt biến môi trường cho development
+      - NODE_ENV=development
     depends_on:
       - mongodb
       - redis
@@ -143,7 +139,7 @@ services:
     ports:
       - "80:80"
       - "443:443"
-    # Mount file config của Nginx để có thể thay đổi mà không cần build lại image
+    # Mount file config của Nginx 
     volumes:
       - ./api-gateway/nginx.conf:/etc/nginx/nginx.conf
     depends_on:

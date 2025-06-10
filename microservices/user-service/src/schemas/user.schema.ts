@@ -2,9 +2,8 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 
 export type UserDocument = HydratedDocument<User>;
-
 // Address sẽ là một sub-document (schema con)
-@Schema({ _id: false }) // Không tạo _id riêng cho mỗi địa chỉ trong mảng
+@Schema({ _id: false })
 export class Address {
     @Prop({ required: true })
     street: string;
