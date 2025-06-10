@@ -13,7 +13,7 @@ services:
     runtime: docker
     dockerfilePath: ./api-gateway/Dockerfile
     dockerContext: ./api-gateway
-    healthCheckPath: /
+    healthCheckPath: /api/health
 
   # Service cho User Microservice
   - name: user-service
