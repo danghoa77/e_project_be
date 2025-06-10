@@ -1,31 +1,35 @@
+# api-gateway/conf.d/ecommerce.conf.template
+
 server {
     listen 80;
     server_name localhost;
 
+    # Cấu hình proxy chung
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
 
-    # Định tuyến request đến các microservice bằng biến môi trường
-    # KHÔNG DÙNG upstream ở đây
-    location /auth/ {
-        proxy_pass http://${USER_SERVICE_URL}/auth/;
+    # Định tuyến request đến các microservice
+    # Nginx sẽ tự động nối phần còn lại của URL
+    # Ví dụ: request /users/profile sẽ được chuyển đến http://<USER_SERVICE_URL>/users/profile
+    location /auth {
+        proxy_pass http://${USER_SERVICE_URL};
     }
-    location /users/ {
-        proxy_pass http://${USER_SERVICE_URL}/users/;
+    location /users {
+        proxy_pass http://${USER_SERVICE_URL};
     }
-    location /products/ {
-        proxy_pass http://${PRODUCT_SERVICE_URL}/products/;
+    location /products {
+        proxy_pass http://${PRODUCT_SERVICE_URL};
     }
-    location /carts/ {
-        proxy_pass http://${ORDER_SERVICE_URL}/carts/;
+    location /carts {
+        proxy_pass http://${ORDER_SERVICE_URL};
     }
-    location /orders/ {
-        proxy_pass http://${ORDER_SERVICE_URL}/orders/;
+    location /orders {
+        proxy_pass http://${ORDER_SERVICE_URL};
     }
-    location /payments/ {
-        proxy_pass http://${PAYMENT_SERVICE_URL}/payments/;
+    location /payments {
+        proxy_pass http://${PAYMENT_SERVICE_URL};
     }
 
     location / {
