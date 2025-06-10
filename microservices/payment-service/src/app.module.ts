@@ -5,7 +5,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { PaymentsModule } from './payments/payments.module';
 import { RedisModule } from '@app/common-auth';
 import { HttpModule } from '@nestjs/axios';
-
+import { AppController } from './app.controller';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -21,9 +21,9 @@ import { HttpModule } from '@nestjs/axios';
 
     PaymentsModule,
     RedisModule,
-    HttpModule, // Cần để gọi Order Service nếu muốn lấy thông tin Order trước khi tạo Payment
+    HttpModule,
   ],
-  controllers: [],
+  controllers: [AppController],
   providers: [],
 })
 export class AppModule { }

@@ -5,6 +5,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ProductsModule } from './products/products.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { RedisModule } from '@app/common-auth';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -23,7 +24,7 @@ import { RedisModule } from '@app/common-auth';
     CloudinaryModule,
     RedisModule,
   ],
-  controllers: [],
+  controllers: [AppController],
   providers: [],
 
 })

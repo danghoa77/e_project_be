@@ -6,6 +6,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { RedisModule } from '@app/common-auth';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -29,11 +30,12 @@ import { RedisModule } from '@app/common-auth';
       inject: [ConfigService],
       global: true,
     }),
+
     UsersModule,
     AuthModule,
     RedisModule,
   ],
-  controllers: [],
+  controllers: [AppController],
   providers: [],
 })
 export class AppModule { }

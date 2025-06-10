@@ -6,7 +6,7 @@ import { OrdersModule } from './orders/orders.module';
 import { CartsModule } from './carts/carts.module';
 import { RedisModule } from '@app/common-auth';
 import { HttpModule } from '@nestjs/axios';
-
+import { AppController } from './app.controller';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -20,12 +20,12 @@ import { HttpModule } from '@nestjs/axios';
       inject: [ConfigService],
     }),
 
-    HttpModule, 
+    HttpModule,
     OrdersModule,
     CartsModule,
     RedisModule,
   ],
-  controllers: [],
+  controllers: [AppController],
   providers: [],
 })
 export class AppModule { }
