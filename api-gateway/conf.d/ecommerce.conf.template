@@ -10,30 +10,14 @@ server {
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
 
-    # Định tuyến các request
-    # Logic: Request đến /api/auth/login sẽ được chuyển đến http://<service_url>/auth/login
-    
-    location /api/auth/ {
-        # Dấu / ở cuối proxy_pass rất quan trọng
-        proxy_pass http://${USER_SERVICE_URL}/auth/;
-    }
-    location /api/users/ {
-        proxy_pass http://${USER_SERVICE_URL}/users/;
-    }
-    location /api/products/ {
-        proxy_pass http://${PRODUCT_SERVICE_URL}/products/;
-    }
-    location /api/carts/ {
-        proxy_pass http://${ORDER_SERVICE_URL}/carts/;
-    }
-    location /api/orders/ {
-        proxy_pass http://${ORDER_SERVICE_URL}/orders/;
-    }
-    location /api/payments/ {
-        proxy_pass http://${PAYMENT_SERVICE_URL}/payments/;
-    }
+    # Định tuyến request đến các microservice bằng biến môi trường
+    location /api/auth { proxy_pass http://${USER_SERVICE_URL}/auth; }
+    location /api/users { proxy_pass http://${USER_SERVICE_URL}/users; }
+    location /api/products { proxy_pass http://${PRODUCT_SERVICE_URL}/products; }
+    location /api/carts { proxy_pass http://${ORDER_SERVICE_URL}/carts; }
+    location /api/orders { proxy_pass http://${ORDER_SERVICE_URL}/orders; }
+    location /api/payments { proxy_pass http://${PAYMENT_SERVICE_URL}/payments; }
 
-    # Trang mặc định để kiểm tra
     location / {
         return 200 'API Gateway is running!';
         add_header Content-Type text/plain;
