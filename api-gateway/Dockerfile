@@ -11,14 +11,13 @@
 
 # api-gateway/Dockerfile
 
-FROM nginx:alpine
+FROM nginx:stable-alpine
 
-# Cài thêm envsubst để xử lý biến môi trường
-RUN apk add --no-cache bash curl gettext
+# Xóa file config mặc định để tránh xung đột
+RUN rm -f /etc/nginx/conf.d/default.conf
 
-# Copy file template và nginx config
+# Copy file cấu hình chính
 COPY nginx.conf /etc/nginx/nginx.conf
-COPY conf.d/ecommerce.conf.template /etc/nginx/templates/ecommerce.conf.template
 
-# Entry point để thay thế biến môi trường
-CMD ["/bin/sh", "-c", "envsubst < /etc/nginx/templates/ecommerce.conf.template > /etc/nginx/conf.d/ecommerce.conf && nginx -g 'daemon off;'"]
+# Copy file template vào thư mục mà entrypoint của Nginx sẽ tự động xử lý
+COPY conf.d/ecommerce.conf.template /etc/nginx/templates/default.conf.template
