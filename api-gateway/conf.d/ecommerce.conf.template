@@ -23,3 +23,4 @@ server {
         return 200 'API Gateway is running!';
         add_header Content-Type text/plain;
     }
+}
