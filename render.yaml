@@ -1,12 +1,10 @@
-# render.yaml - Phiên bản cuối cùng đã được xác thực
+# render.yaml - Phiên bản đơn giản hóa để tạo service
 
-# Định nghĩa các database
 databases:
   - name: redis
     plan: free
-    ipAllowList: [] # Cho phép các service trong project kết nối
+    ipAllowList: []
 
-# Định nghĩa các service ứng dụng
 services:
   # Service cho API Gateway
   - name: api-gateway
@@ -24,13 +22,8 @@ services:
     runtime: docker
     dockerfilePath: ./microservices/user-service/Dockerfile
     dockerContext: .
-    envVars:
-      - fromGroup: ecommerce-secrets
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: redis
-          property: connectionString
+    healthCheckPath: /api
+    envGroup: ecommerce-secrets
 
   # Service cho Product Microservice
   - name: product-service
@@ -39,8 +32,8 @@ services:
     runtime: docker
     dockerfilePath: ./microservices/product-service/Dockerfile
     dockerContext: .
-    envVars:
-      - fromGroup: ecommerce-secrets # CÚ PHÁP ĐÚNG
+    healthCheckPath: /api
+    envGroup: ecommerce-secrets
 
   # Service cho Order Microservice
   - name: order-service
@@ -49,13 +42,10 @@ services:
     runtime: docker
     dockerfilePath: ./microservices/order-service/Dockerfile
     dockerContext: .
+    healthCheckPath: /api
+    envGroup: ecommerce-secrets
+    # Chúng ta vẫn cần các biến này để các service gọi nhau
     envVars:
-      - fromGroup: ecommerce-secrets # CÚ PHÁP ĐÚNG
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: redis
-          property: connectionString
       - key: PRODUCT_SERVICE_URL
         value: http://product-service:3000
 
@@ -66,12 +56,8 @@ services:
     runtime: docker
     dockerfilePath: ./microservices/payment-service/Dockerfile
     dockerContext: .
+    healthCheckPath: /api
+    envGroup: ecommerce-secrets
     envVars:
-      - fromGroup: ecommerce-secrets # CÚ PHÁP ĐÚNG
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: redis
-          property: connectionString
       - key: ORDER_SERVICE_URL
         value: http://order-service:3000
