@@ -11,12 +11,12 @@ server {
     proxy_set_header X-Forwarded-Proto $scheme;
 
     # Định tuyến request đến các microservice bằng biến môi trường
-    location /api/auth { proxy_pass http://${USER_SERVICE_URL}/api/auth; }
-    location /api/users { proxy_pass http://${USER_SERVICE_URL}/api/users; }
-    location /api/products { proxy_pass http://${PRODUCT_SERVICE_URL}/api/products; }
-    location /api/carts { proxy_pass http://${ORDER_SERVICE_URL}/api/carts; }
-    location /api/orders { proxy_pass http://${ORDER_SERVICE_URL}/api/orders; }
-    location /api/payments { proxy_pass http://${PAYMENT_SERVICE_URL}/api/payments; }
+    location /api/auth { proxy_pass http://${USER_SERVICE_URL}/auth; }
+    location /api/users { proxy_pass http://${USER_SERVICE_URL}/users; }
+    location /api/products { proxy_pass http://${PRODUCT_SERVICE_URL}/products; }
+    location /api/carts { proxy_pass http://${ORDER_SERVICE_URL}/carts; }
+    location /api/orders { proxy_pass http://${ORDER_SERVICE_URL}/orders; }
+    location /api/payments { proxy_pass http://${PAYMENT_SERVICE_URL}/payments; }
 
     location / {
         return 200 'API Gateway is running!';
