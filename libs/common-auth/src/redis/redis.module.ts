@@ -11,18 +11,14 @@ import { RedisService } from './redis.service';
             provide: 'REDIS_CLIENT',
             useFactory: async (configService: ConfigService) => {
 
-                // const redisUrl = configService.get<string>('REDIS_URL');
-                // if (!redisUrl) {
-                //     throw new Error('REDIS_URL is not defined in environment variables');
-                // }
+                const redisUrl = configService.get<string>('REDIS_URL');
+                if (!redisUrl) {
+                    throw new Error('REDIS_URL is not defined in environment variables');
+                }
 
                 const Redis = await import('ioredis');
 
-                const redisClient = new Redis.Redis({
-                    host: configService.get<string>('REDIS_HOST'),
-                    port: configService.get<number>('REDIS_PORT'),
-                    password: configService.get<string>('REDIS_PASSWORD'),
-                });
+                const redisClient = new Redis.Redis(redisUrl);
 
                 redisClient.on('error', (err) => console.error('Redis Client Error', err));
                 redisClient.on('connect', () => console.log('Redis Connected'));
