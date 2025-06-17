@@ -8,7 +8,7 @@ import { createHmac } from 'crypto';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { RedisService } from '@app/common-auth';
-
+import * as qs from 'qs';
 @Injectable()
 export class PaymentsService {
     private readonly logger = new Logger(PaymentsService.name);
@@ -30,16 +30,14 @@ export class PaymentsService {
     }
 
     private _generateVnpayHash(params: any, secretKey: string): string {
+
         const sortedParams = Object.keys(params)
             .sort()
             .reduce((obj, key) => {
                 obj[key] = params[key];
                 return obj;
             }, {});
-
-        const signData = Object.keys(sortedParams)
-            .map(key => `${key}=${sortedParams[key]}`)
-            .join('&');
+        const signData = qs.stringify(sortedParams, { encode: false });
 
         this.logger.log(`[Hashing] Generating hash from data string: "${signData}"`);
         return createHmac('sha512', secretKey).update(signData).digest('hex');

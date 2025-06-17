@@ -1,5 +1,5 @@
 // user-service/src/users/users.service.ts
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, Address } from '../schemas/user.schema';
@@ -7,6 +7,7 @@ import { GetUserDto } from './dto/get-user.dto';
 import { plainToClass } from 'class-transformer';
 import * as bcrypt from 'bcryptjs';
 import { RedisService } from '@app/common-auth';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -43,5 +44,35 @@ export class UsersService {
         const userDto = plainToClass(GetUserDto, user.toObject());
         await this.redisService.set(`user:${id}`, JSON.stringify(userDto), 60 * 5); // Cache 5 phút
         return userDto;
+    }
+    async updateProfile(
+        userId: string,
+        updateUserDto: UpdateUserDto,
+    ): Promise<User> {
+        const user = await this.userModel.findById(userId);
+
+        if (!user) {
+            throw new NotFoundException(`User with ID ${userId} not found.`);
+        }
+
+        if (updateUserDto.addresses) {
+            const defaultAddresses = updateUserDto.addresses.filter(
+                (addr) => addr.isDefault === true,
+            );
+            if (defaultAddresses.length > 1) {
+                throw new BadRequestException('Only one address can be set as default.');
+            }
+        }
+
+        Object.assign(user, updateUserDto);
+
+        try {
+            return await user.save();
+        } catch (error) {
+            if (error.name === 'ValidationError') {
+                throw new BadRequestException(error.errors);
+            }
+            throw error;
+        }
     }
 }

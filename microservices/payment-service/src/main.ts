@@ -12,7 +12,7 @@ async function bootstrap() {
     credentials: true,
     allowedHeaders: 'Content-Type, Accept, Authorization, X-CSRF-Token',
   });
-
+  app.getHttpAdapter().getInstance().set('trust proxy', true);
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     forbidNonWhitelisted: true,
