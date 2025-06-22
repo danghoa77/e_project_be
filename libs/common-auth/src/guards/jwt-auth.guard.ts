@@ -9,8 +9,6 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         err: any,
         user: TUser,
         info: any,
-        context?: import('@nestjs/common').ExecutionContext,
-        status?: any
     ): TUser | never {
         if (err || !user) {
             if (info?.name === 'TokenExpiredError') {
