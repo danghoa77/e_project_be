@@ -5,8 +5,15 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, ExtractJwt } from 'passport-jwt';
 import { RedisService } from '../redis/redis.service';
 
+interface JwtPayload {
+    sub: string;
+    email?: string;
+    role?: string;
+}
+
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
+
     constructor(
         configService: ConfigService,
         private readonly redisService: RedisService
@@ -18,7 +25,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
         });
     }
 
-    async validate(payload: { sub: string, email?: string, role?: string }): Promise<{ userId: string, email?: string, role?: string }> {
+    async validate(payload: JwtPayload): Promise<any> {
         if (!payload || !payload.sub) {
             throw new UnauthorizedException('Invalid token payload.');
         }
