@@ -10,7 +10,7 @@ import { UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { UserDocument } from '../schemas/user.schema';
 
-// Mock (giả lập) các dependency mà AuthService cần
+
 const mockUsersService = {
     findByEmail: jest.fn(),
 };
