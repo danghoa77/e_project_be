@@ -92,7 +92,11 @@ describe('OrdersController', () => {
     describe('getOrderById', () => {
         it('should allow an admin to get any order', async () => {
             const mockReq = { user: { role: 'admin' } };
-            const mockOrder = { userId: new Types.ObjectId() };
+            const mockOrder = {
+                userId: {
+                    toString: () => 'another-user-id'
+                }
+            };
             mockOrdersService.findOrderById.mockResolvedValue(mockOrder);
 
             const result = await controller.getOrderById(mockReq, 'some-order-id');
@@ -104,7 +108,11 @@ describe('OrdersController', () => {
         it('should allow a customer to get their own order', async () => {
             const mockUserId = 'customer-123';
             const mockReq = { user: { userId: mockUserId, role: 'customer' } };
-            const mockOrder = { userId: new Types.ObjectId(mockUserId) };
+            const mockOrder = {
+                userId: {
+                    toString: () => mockUserId,
+                },
+            };
             mockOrdersService.findOrderById.mockResolvedValue(mockOrder);
 
             const result = await controller.getOrderById(mockReq, 'my-order-id');
@@ -117,7 +125,11 @@ describe('OrdersController', () => {
             const mockUserId = 'customer-123';
             const anotherUserId = 'customer-456';
             const mockReq = { user: { userId: mockUserId, role: 'customer' } };
-            const mockOrder = { userId: new Types.ObjectId(anotherUserId) };
+            const mockOrder = {
+                userId: {
+                    toString: () => anotherUserId
+                }
+            };
             mockOrdersService.findOrderById.mockResolvedValue(mockOrder);
 
             await expect(controller.getOrderById(mockReq, 'another-order-id')).rejects.toThrow(NotFoundException);
