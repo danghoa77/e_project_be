@@ -94,7 +94,7 @@ describe('OrdersController', () => {
             const mockReq = { user: { role: 'admin' } };
             const mockOrder = {
                 userId: {
-                    toString: () => 'another-user-id'
+                    toHexString: () => 'another-user-id'
                 }
             };
             mockOrdersService.findOrderById.mockResolvedValue(mockOrder);
@@ -110,7 +110,7 @@ describe('OrdersController', () => {
             const mockReq = { user: { userId: mockUserId, role: 'customer' } };
             const mockOrder = {
                 userId: {
-                    toString: () => mockUserId,
+                    toHexString: () => mockUserId
                 },
             };
             mockOrdersService.findOrderById.mockResolvedValue(mockOrder);
@@ -127,7 +127,7 @@ describe('OrdersController', () => {
             const mockReq = { user: { userId: mockUserId, role: 'customer' } };
             const mockOrder = {
                 userId: {
-                    toString: () => anotherUserId
+                    toHexString: () => anotherUserId,
                 }
             };
             mockOrdersService.findOrderById.mockResolvedValue(mockOrder);
