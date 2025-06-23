@@ -32,7 +32,7 @@ describe('CartsController', () => {
         expect(controller).toBeDefined();
     });
 
-    // Test cho endpoint GET /
+    // Test endpoint GET /
     describe('getCart', () => {
         it('should call cartsService.getCartByUserId with the correct userId', async () => {
             // Arrange
@@ -50,7 +50,7 @@ describe('CartsController', () => {
         });
     });
 
-    // Test cho endpoint POST /
+    // Test endpoint POST /
     describe('addItem', () => {
         it('should call cartsService.addItemToCart with correct userId and DTO', async () => {
             // Arrange
