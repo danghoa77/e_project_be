@@ -57,18 +57,22 @@ describe('AuthService', () => {
     });
 
     describe('validateUser', () => {
-        it('should return user object if validation is successful', async () => {
-            const mockUser = {
+        it('should return the full user document if validation is successful', async () => {
+            const mockUserDocument = {
+                _id: 'some-user-id-123',
                 email: 'test@test.com',
                 password: 'hashedpassword',
-                toObject: () => ({ email: 'test@test.com' }),
+                name: 'Test User',
+                role: 'customer',
+                toObject: () => mockUserDocument,
             };
-            mockUsersService.findByEmail.mockResolvedValue(mockUser);
+
+            mockUsersService.findByEmail.mockResolvedValue(mockUserDocument);
             (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
             const result = await service.validateUser('test@test.com', 'password');
 
-            expect(result).toEqual({ email: 'test@test.com' });
+            expect(result).toEqual(mockUserDocument);
             expect(mockUsersService.findByEmail).toHaveBeenCalledWith('test@test.com');
         });
 
@@ -80,15 +84,11 @@ describe('AuthService', () => {
         });
 
         it('should return null if password does not match', async () => {
-            // Arrange: Giả lập password không khớp
             const mockUser = { email: 'test@test.com', password: 'hashedpassword' };
             mockUsersService.findByEmail.mockResolvedValue(mockUser);
             (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
-            // Act
             const result = await service.validateUser('test@test.com', 'wrongpassword');
-
-            // Assert
             expect(result).toBeNull();
         });
     });
