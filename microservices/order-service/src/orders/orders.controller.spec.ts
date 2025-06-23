@@ -120,7 +120,7 @@ describe('OrdersController', () => {
             const mockOrder = { userId: new Types.ObjectId(anotherUserId) };
             mockOrdersService.findOrderById.mockResolvedValue(mockOrder);
 
-            await expect(controller.getOrderById(mockReq, 'another-order-id')).rejects.toThrow(ForbiddenException);
+            await expect(controller.getOrderById(mockReq, 'another-order-id')).rejects.toThrow(NotFoundException);
         });
     });
 
