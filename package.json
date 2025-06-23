@@ -107,7 +107,7 @@
     "coverageDirectory": "./coverage",
     "testEnvironment": "node",
     "roots": [
-      "<rootDir>/apps/",
+      "<rootDir>/microservices/",
       "<rootDir>/libs/"
     ],
     "moduleNameMapper": {
