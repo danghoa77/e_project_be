@@ -4,7 +4,7 @@ import * as bcrypt from 'bcryptjs';
 import { UsersService } from '../users/users.service';
 import { RegisterUserDto } from '../users/dto/register-user.dto';
 import { UserDocument } from '../schemas/user.schema';
-import { RedisService } from '@app/common-auth';
+import { RedisService, MailerService } from '@app/common-auth';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
@@ -12,6 +12,7 @@ export class AuthService {
     private readonly logger = new Logger(AuthService.name);
 
     constructor(
+        private readonly mailerService: MailerService,
         private usersService: UsersService,
         private jwtService: JwtService,
         private redisService: RedisService,
@@ -51,6 +52,20 @@ export class AuthService {
         }
         const newUser = await this.usersService.createUser(registerUserDto);
         this.logger.log(`User ${newUser.email} registered successfully.`);
+        try {
+            await this.mailerService.sendMail(
+                {
+                    to: newUser.email,
+                    subject: 'Welcome to Our Service',
+                    html: `<p>Dear ${newUser.name},</p><p>Thank you for registering with us!</p>`,
+                    from: this.configService.get<string>('MAIL_FROM') || '',
+                }
+            );
+        }
+        catch (error) {
+            this.logger.error(`Failed to send welcome email to ${newUser.email}`, error);
+            throw new BadRequestException('Failed to send welcome email.');
+        }
         return this.login(newUser as UserDocument);
     }
 

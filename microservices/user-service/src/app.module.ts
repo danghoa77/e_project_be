@@ -5,7 +5,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { JwtModule } from '@nestjs/jwt';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
-import { RedisModule } from '@app/common-auth';
+import { RedisModule, MailerModule } from '@app/common-auth';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 @Module({
@@ -30,10 +30,10 @@ import { AppService } from './app.service';
       inject: [ConfigService],
       global: true,
     }),
-
     UsersModule,
     AuthModule,
     RedisModule,
+    MailerModule,
   ],
   controllers: [AppController],
   providers: [AppService],

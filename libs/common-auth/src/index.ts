@@ -13,3 +13,6 @@ export * from './redis/redis.service';
 export * from './decorator/roles.decorator'
 
 export * from './strategies/jwt.strategy';
+
+export * from './mailler/mailer.module';
+export * from './mailler/mailer.service';

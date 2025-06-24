@@ -6,13 +6,14 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/users.module';
 import { LocalStrategy } from './strategies/local.strategy';
-import { RedisModule, JwtStrategy } from '@app/common-auth';
+import { RedisModule, JwtStrategy, MailerModule } from '@app/common-auth';
 
 @Module({
     imports: [
         UsersModule,
         PassportModule,
         RedisModule,
+        MailerModule,
         ConfigModule,
         JwtModule.registerAsync({
             imports: [ConfigModule],
