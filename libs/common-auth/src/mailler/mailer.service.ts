@@ -1,9 +1,8 @@
-//mailer.service.ts
+// mailer.service.ts
 import { Injectable, Inject, Logger } from '@nestjs/common';
-import { Transporter } from 'nodemailer';
+import { Transporter, SentMessageInfo } from 'nodemailer';
 import { MAILER_TRANSPORTER } from './constants';
 import { ConfigService } from '@nestjs/config';
-import { SentMessageInfo } from 'nodemailer';
 
 export interface SendMailOptions {
     to: string;
@@ -26,13 +25,15 @@ export class MailerService {
         const { to, subject, html, from, fromName } = options;
 
         const defaultFrom = this.configService.get<string>('MAIL_FROM');
-        const defaultFromName = "E-commerce Site";
+        const defaultFromName = 'E-commerce Site';
 
         const fromAddress = from || defaultFrom;
         const fromDisplayName = fromName || defaultFromName;
 
         if (!fromAddress) {
-            this.logger.error('No "from" address is configured. Set MAIL_FROM in .env or pass it in options.');
+            this.logger.error(
+                'No "from" address is configured. Set MAIL_FROM in .env or pass it in options.',
+            );
             return;
         }
 
@@ -43,9 +44,13 @@ export class MailerService {
                 subject,
                 html,
             });
+
             this.logger.log(`Mail sent successfully to ${to}. Message ID: ${info.messageId}`);
         } catch (error: unknown) {
-            const stack = typeof error === 'object' && error && 'stack' in error ? (error as { stack?: string }).stack : undefined;
+            const stack =
+                typeof error === 'object' && error && 'stack' in error
+                    ? (error as { stack?: string }).stack
+                    : undefined;
             this.logger.error(`Failed to send mail to ${to}`, stack);
             throw error;
         }
