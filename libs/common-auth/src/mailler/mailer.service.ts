@@ -3,7 +3,7 @@ import { Injectable, Inject, Logger } from '@nestjs/common';
 import { Transporter } from 'nodemailer';
 import { MAILER_TRANSPORTER } from './constants';
 import { ConfigService } from '@nestjs/config';
-
+import { SentMessageInfo } from 'nodemailer';
 
 export interface SendMailOptions {
     to: string;
@@ -37,15 +37,16 @@ export class MailerService {
         }
 
         try {
-            const info = await this.transporter.sendMail({
+            const info: SentMessageInfo = await this.transporter.sendMail({
                 from: `"${fromDisplayName}" <${fromAddress}>`,
                 to,
                 subject,
                 html,
             });
             this.logger.log(`Mail sent successfully to ${to}. Message ID: ${info.messageId}`);
-        } catch (error) {
-            this.logger.error(`Failed to send mail to ${to}`, error.stack);
+        } catch (error: unknown) {
+            const stack = typeof error === 'object' && error && 'stack' in error ? (error as { stack?: string }).stack : undefined;
+            this.logger.error(`Failed to send mail to ${to}`, stack);
             throw error;
         }
     }

@@ -25,7 +25,7 @@ const mailerProvider = {
     imports: [ConfigModule],
     providers: [MailerService, {
         provide: MAILER_TRANSPORTER,
-        useFactory: async (configService: ConfigService) => {
+        useFactory: (configService: ConfigService) => {
             return createTransport({
                 host: configService.get('MAIL_HOST'),
                 port: configService.get('MAIL_PORT'),
