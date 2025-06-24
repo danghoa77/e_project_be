@@ -38,14 +38,18 @@ export class MailerService {
         }
 
         try {
-            const info: SentMessageInfo = await this.transporter.sendMail({
+            const info: unknown = await this.transporter.sendMail({
                 from: `"${fromDisplayName}" <${fromAddress}>`,
                 to,
                 subject,
                 html,
             });
 
-            this.logger.log(`Mail sent successfully to ${to}. Message ID: ${info.messageId}`);
+            if (typeof info === 'object' && info && 'messageId' in info) {
+                this.logger.log(`Mail sent successfully to ${to}. Message ID: ${(info as SentMessageInfo).messageId}`);
+            } else {
+                this.logger.log(`Mail sent successfully to ${to}.`);
+            }
         } catch (error: unknown) {
             const stack =
                 typeof error === 'object' && error && 'stack' in error
