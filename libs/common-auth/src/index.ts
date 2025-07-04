@@ -7,10 +7,10 @@ export * from './guards/roles.guard';
 // Export Module chính
 export * from './common-auth.module';
 
-// Export redis module 
+// Export redis module
 export * from './redis/redis.module';
 export * from './redis/redis.service';
-export * from './decorator/roles.decorator'
+export * from './decorator/roles.decorator';
 
 export * from './strategies/jwt.strategy';
 
