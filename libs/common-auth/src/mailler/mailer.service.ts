@@ -1,4 +1,3 @@
-// mailer.service.ts
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { Transporter, SentMessageInfo } from 'nodemailer';
 import { MAILER_TRANSPORTER } from './constants';
@@ -43,10 +42,10 @@ export class MailerService {
                 to,
                 subject,
                 html,
-            });
+            }) as SentMessageInfo;
 
-            if (typeof info === 'object' && info && 'messageId' in info) {
-                this.logger.log(`Mail sent successfully to ${to}. Message ID: ${(info as SentMessageInfo).messageId}`);
+            if (info && typeof info === 'object' && 'messageId' in info && typeof info.messageId === 'string') {
+                this.logger.log(`Mail sent successfully to ${to}. Message ID: ${info.messageId}`);
             } else {
                 this.logger.log(`Mail sent successfully to ${to}.`);
             }
