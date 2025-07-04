@@ -43,17 +43,15 @@ export class MailerService {
         }
 
         try {
-            const result: SentMessageInfo = await this.transporter.sendMail({
+            const result = (await this.transporter.sendMail({
                 from: `"${fromDisplayName}" <${fromAddress}>`,
                 to,
                 subject,
                 html,
-            }) as SentMessageInfo;
-
-
+            })) as SentMessageInfo;
             if (
-                result &&
                 typeof result === 'object' &&
+                result !== null &&
                 'messageId' in result &&
                 typeof result.messageId === 'string'
             ) {
