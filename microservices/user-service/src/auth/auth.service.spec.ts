@@ -9,7 +9,7 @@ import { RedisService } from '@app/common-auth';
 import { UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { UserDocument } from '../schemas/user.schema';
-
+import { MailerService } from '@app/common-auth';
 
 const mockUsersService = {
     findByEmail: jest.fn(),
@@ -24,7 +24,9 @@ const mockRedisService = {
 const mockConfigService = {
     get: jest.fn(),
 };
-
+const mockMailerService = {
+    sendMail: jest.fn(),
+};
 
 jest.mock('bcryptjs', () => ({
     compare: jest.fn(),
@@ -44,6 +46,7 @@ describe('AuthService', () => {
                 { provide: JwtService, useValue: mockJwtService },
                 { provide: RedisService, useValue: mockRedisService },
                 { provide: ConfigService, useValue: mockConfigService },
+                { provide: MailerService, useValue: mockMailerService },
             ],
         }).compile();
 

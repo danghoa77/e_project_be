@@ -38,7 +38,7 @@ export class MailerService {
         }
 
         try {
-            const info: unknown = await this.transporter.sendMail({
+            const info: SentMessageInfo = await this.transporter.sendMail({
                 from: `"${fromDisplayName}" <${fromAddress}>`,
                 to,
                 subject,
