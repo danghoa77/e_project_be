@@ -14,21 +14,16 @@ import { RedisModule } from './redis/redis.module';
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: configService.get<string>('JWT_EXPIRATION_TIME') || '1h' },
+        signOptions: {
+          expiresIn: configService.get<string>('JWT_EXPIRATION_TIME') || '1h',
+        },
       }),
       inject: [ConfigService],
     }),
     RedisModule,
   ],
 
-  providers: [
-    JwtStrategy,
-  ],
-  exports: [
-    PassportModule,
-    JwtModule,
-    JwtStrategy,
-    RedisModule,
-  ],
+  providers: [JwtStrategy],
+  exports: [PassportModule, JwtModule, JwtStrategy, RedisModule],
 })
-export class CommonAuthModule { }
+export class CommonAuthModule {}

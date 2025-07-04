@@ -6,25 +6,25 @@ import { createTransport } from 'nodemailer';
 import { MAILER_TRANSPORTER } from './constants';
 
 @Module({
-    imports: [ConfigModule],
-    providers: [
-        MailerService,
-        {
-            provide: MAILER_TRANSPORTER,
-            useFactory: (configService: ConfigService) => {
-                return createTransport({
-                    host: configService.get('MAIL_HOST'),
-                    port: configService.get('MAIL_PORT'),
-                    secure: false,
-                    auth: {
-                        user: configService.get('MAIL_USER'),
-                        pass: configService.get('MAIL_PASS'),
-                    },
-                });
-            },
-            inject: [ConfigService],
-        },
-    ],
-    exports: [MailerService, MAILER_TRANSPORTER],
+  imports: [ConfigModule],
+  providers: [
+    MailerService,
+    {
+      provide: MAILER_TRANSPORTER,
+      useFactory: (configService: ConfigService) => {
+        return createTransport({
+          host: configService.get('MAIL_HOST'),
+          port: configService.get('MAIL_PORT'),
+          secure: false,
+          auth: {
+            user: configService.get('MAIL_USER'),
+            pass: configService.get('MAIL_PASS'),
+          },
+        });
+      },
+      inject: [ConfigService],
+    },
+  ],
+  exports: [MailerService, MAILER_TRANSPORTER],
 })
-export class MailerModule { }
+export class MailerModule {}
