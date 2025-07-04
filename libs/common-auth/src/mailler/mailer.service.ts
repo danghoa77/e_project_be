@@ -37,24 +37,23 @@ export class MailerService {
         }
 
         try {
-            const result = await this.transporter.sendMail({
+            const result: SentMessageInfo = await this.transporter.sendMail({
                 from: `"${fromDisplayName}" <${fromAddress}>`,
                 to,
                 subject,
                 html,
             });
 
-            if (result && typeof result === 'object' && 'messageId' in result && typeof result.messageId === 'string') {
-                const info = result as SentMessageInfo;
-                this.logger.log(`Mail sent successfully to ${to}. Message ID: ${info.messageId}`);
+            if (result && typeof result.messageId === 'string') {
+                this.logger.log(`Mail sent successfully to ${to}. Message ID: ${result.messageId}`);
             } else {
                 this.logger.log(`Mail sent successfully to ${to}.`);
             }
         } catch (error: unknown) {
-            const stack =
-                typeof error === 'object' && error != null && 'stack' in error
-                    ? (error as { stack?: string }).stack
-                    : undefined;
+            let stack: string | undefined;
+            if (typeof error === 'object' && error !== null && 'stack' in error && typeof (error as any).stack === 'string') {
+                stack = (error as { stack?: string }).stack;
+            }
             this.logger.error(`Failed to send mail to ${to}`, stack);
             throw error;
         }
