@@ -1,4 +1,3 @@
-// mailer.service.ts
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { Transporter, SentMessageInfo } from 'nodemailer';
 import { MAILER_TRANSPORTER } from './constants';
@@ -11,7 +10,6 @@ export interface SendMailOptions {
     from?: string;
     fromName?: string;
 }
-
 
 interface ErrorWithStack extends Error {
     stack?: string;
@@ -43,18 +41,15 @@ export class MailerService {
         }
 
         try {
-            const result = (await this.transporter.sendMail({
+            const result: SentMessageInfo = await this.transporter.sendMail({
                 from: `"${fromDisplayName}" <${fromAddress}>`,
                 to,
                 subject,
                 html,
-            })) as SentMessageInfo;
-            if (
-                typeof result === 'object' &&
-                result !== null &&
-                'messageId' in result &&
-                typeof result.messageId === 'string'
-            ) {
+            });
+
+            // Check if messageId exists and is a string
+            if (result.messageId) {
                 this.logger.log(`Mail sent successfully to ${to}. Message ID: ${result.messageId}`);
             } else {
                 this.logger.log(`Mail sent successfully to ${to}.`);
