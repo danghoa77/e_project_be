@@ -5,7 +5,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { RedisModule } from './redis/redis.module';
-import { TalkjsModule } from './talkjs/talkjs.module'; 
+import { TalkjsModule } from './talkjs/talkjs.module';
 @Module({
   imports: [
     ConfigModule,

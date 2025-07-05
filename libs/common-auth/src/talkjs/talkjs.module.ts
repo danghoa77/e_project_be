@@ -4,7 +4,7 @@ import { TalkjsService } from './talkjs.service';
 
 @Global()
 @Module({
-    providers: [TalkjsService],
-    exports: [TalkjsService],
+  providers: [TalkjsService],
+  exports: [TalkjsService],
 })
-export class TalkjsModule { }
+export class TalkjsModule {}

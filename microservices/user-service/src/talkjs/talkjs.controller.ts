@@ -38,7 +38,7 @@ export class TalkjsController {
         @Body() getTalkjsTokenDto: GetTalkjsTokenDto
     ) {
         const { _id, email, role } = req.user;
-        const talkjsToken = await this.talkjsCommonService.generateTalkjsToken(_id, email, role);
+        const talkjsToken = this.talkjsCommonService.generateTalkjsToken(_id, email, role);
         return { token: talkjsToken, appId: this.talkjsCommonService['talkjsAppId'] };
     }
 
