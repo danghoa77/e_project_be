@@ -1,15 +1,16 @@
-// libs/talkjs-common/src/talkjs.service.ts
 import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import * as jwt from 'jsonwebtoken';
 
 interface TalkjsUserAttributes {
+    _id: string;
+    email: string;
     name: string;
-    email?: string;
+    phone: string;
+    role: 'customer' | 'admin';
     photoUrl?: string;
-    role?: string;
-    locale?: string;
+    addresses?: Array<{ street: string; city: string; isDefault: boolean; _id?: string }>;
     custom?: { [key: string]: any };
 }
 
@@ -32,15 +33,20 @@ export class TalkjsService {
         this.talkjsSecretKey = secretKey;
     }
 
-    async upsertUser(userId: string, attributes: TalkjsUserAttributes): Promise<any> {
-        const url = `https://api.talkjs.com/v1/${this.talkjsAppId}/users/${userId}`;
+    async upsertUser(user: TalkjsUserAttributes): Promise<any> {
+        const talkjsUserId = user._id;
+        const url = `https://api.talkjs.com/v1/${this.talkjsAppId}/users/${talkjsUserId}`;
 
         const userData = {
-            name: attributes.name,
-            email: attributes.email ? [attributes.email] : undefined,
-            photoUrl: attributes.photoUrl,
-            role: attributes.role,
-            locale: attributes.locale,
+            name: user.name,
+            email: [user.email],
+            role: user.role,
+            photoUrl: user.photoUrl,
+            custom: {
+                phone: user.phone,
+                addresses: user.addresses,
+                ...(user.custom || {}),
+            },
         };
 
         try {
@@ -50,20 +56,19 @@ export class TalkjsService {
                     'Content-Type': 'application/json',
                 },
             });
-            this.logger.log(`TalkJS user '${userId}' upserted successfully.`);
+            this.logger.log(`TalkJS user '${talkjsUserId}' upserted successfully.`);
             return response.data;
         } catch (error) {
-            this.logger.error(`Failed to upsert TalkJS user '${userId}': ${error.message}`);
-            throw new InternalServerErrorException(`Failed to upsert user to TalkJS: ${error.message}`);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            this.logger.error(`Failed to upsert TalkJS user '${talkjsUserId}': ${errorMessage}`);
+            if (axios.isAxiosError(error) && error.response) {
+                this.logger.error(`TalkJS API Error Response (Upsert User): ${JSON.stringify(error.response.data)}`);
+            }
+            throw new InternalServerErrorException(`Failed to upsert user to TalkJS.`);
         }
     }
 
-
-    async generateTalkjsToken(
-        userId: string,
-        email: string,
-        role: string,
-    ): Promise<string> {
+    generateTalkjsToken(userId: string, email: string, role: string): string {
         const payload = {
             userId: userId,
             custom: {
@@ -75,18 +80,14 @@ export class TalkjsService {
         try {
             return jwt.sign(payload, this.talkjsSecretKey, { algorithm: 'HS256', expiresIn: '1h' });
         } catch (error) {
-            this.logger.error(`Failed to generate TalkJS token for user '${userId}': ${error.message}`);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            this.logger.error(`Failed to generate TalkJS token for user '${userId}': ${errorMessage}`);
             throw new InternalServerErrorException('Failed to generate TalkJS token.');
         }
     }
 
-    async getOrCreateConversation(
-        conversationId: string,
-        participantIds: string[],
-        subject?: string,
-    ): Promise<any> {
+    async getOrCreateConversation(conversationId: string, participantIds: string[], subject?: string): Promise<any> {
         const url = `https://api.talkjs.com/v1/${this.talkjsAppId}/conversations/${conversationId}`;
-
         const conversationData = {
             participants: participantIds,
             subject: subject,
@@ -102,17 +103,16 @@ export class TalkjsService {
             this.logger.log(`TalkJS conversation '${conversationId}' managed successfully.`);
             return response.data;
         } catch (error) {
-            this.logger.error(`Failed to manage TalkJS conversation '${conversationId}': ${error.message}`);
-            throw new InternalServerErrorException(`Failed to manage conversation on TalkJS: ${error.message}`);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            this.logger.error(`Failed to manage TalkJS conversation '${conversationId}': ${errorMessage}`);
+            if (axios.isAxiosError(error) && error.response) {
+                this.logger.error(`TalkJS API Error Response (Get/Create Conversation): ${JSON.stringify(error.response.data)}`);
+            }
+            throw new InternalServerErrorException(`Failed to manage conversation on TalkJS.`);
         }
     }
 
-    async sendMessage(
-        conversationId: string,
-        senderId: string,
-        message: string,
-        type: string = 'text',
-    ): Promise<any> {
+    async sendMessage(conversationId: string, senderId: string, message: string, type: string = 'text'): Promise<any> {
         const url = `https://api.talkjs.com/v1/${this.talkjsAppId}/conversations/${conversationId}/messages`;
 
         const payload = [
@@ -133,8 +133,12 @@ export class TalkjsService {
             this.logger.log(`Message sent to TalkJS conversation '${conversationId}' from '${senderId}'.`);
             return response.data;
         } catch (error) {
-            this.logger.error(`Failed to send message to TalkJS conversation '${conversationId}': ${error.message}`);
-            throw new InternalServerErrorException(`Failed to send message via TalkJS: ${error.message}`);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            this.logger.error(`Failed to send message to TalkJS conversation '${conversationId}': ${errorMessage}`);
+            if (axios.isAxiosError(error) && error.response) {
+                this.logger.error(`TalkJS API Error Response (Send Message): ${JSON.stringify(error.response.data)}`);
+            }
+            throw new InternalServerErrorException(`Failed to send message via TalkJS: ${errorMessage}`);
         }
     }
 
@@ -150,8 +154,12 @@ export class TalkjsService {
             this.logger.log(`Listed TalkJS conversations for user '${userId}'.`);
             return response.data;
         } catch (error) {
-            this.logger.error(`Failed to list TalkJS conversations for user '${userId}': ${error.message}`);
-            throw new InternalServerErrorException(`Failed to list conversations from TalkJS: ${error.message}`);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            this.logger.error(`Failed to list TalkJS conversations for user '${userId}': ${errorMessage}`);
+            if (axios.isAxiosError(error) && error.response) {
+                this.logger.error(`TalkJS API Error Response (List Conversations): ${JSON.stringify(error.response.data)}`);
+            }
+            throw new InternalServerErrorException(`Failed to list conversations from TalkJS: ${errorMessage}`);
         }
     }
 
@@ -166,8 +174,12 @@ export class TalkjsService {
             });
             this.logger.log(`TalkJS conversation '${conversationId}' deleted successfully.`);
         } catch (error) {
-            this.logger.error(`Failed to delete TalkJS conversation '${conversationId}': ${error.message}`);
-            throw new InternalServerErrorException(`Failed to delete conversation from TalkJS: ${error.message}`);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            this.logger.error(`Failed to delete TalkJS conversation '${conversationId}': ${errorMessage}`);
+            if (axios.isAxiosError(error) && error.response) {
+                this.logger.error(`TalkJS API Error Response (Delete Conversation): ${JSON.stringify(error.response.data)}`);
+            }
+            throw new InternalServerErrorException(`Failed to delete conversation from TalkJS: ${errorMessage}`);
         }
     }
 }
