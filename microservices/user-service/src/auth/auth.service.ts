@@ -52,10 +52,12 @@ export class AuthService {
             throw new BadRequestException('Email already exists.');
         }
         const newUser = await this.usersService.createUser(registerUserDto);
-        await this.talkjsService.upsertUser(newUser._id.toString(), {
+        await this.talkjsService.upsertUser({
+            _id: newUser._id.toString(),
             name: newUser.name,
             email: newUser.email,
             role: newUser.role,
+            phone: newUser.phone,
         });
         this.logger.log(`User ${newUser.email} registered successfully.`);
         this.logger.log(`User ${newUser._id} TalkJs registered successfully.`);
