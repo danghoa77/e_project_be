@@ -12,11 +12,12 @@ import {
     HttpCode,
     HttpStatus,
     NotFoundException,
-    Logger
+    Logger,
+    Delete,
 } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { Response } from 'express';
-import { JwtAuthGuard } from '@app/common-auth';
+import { JwtAuthGuard, Role, RolesGuard } from '@app/common-auth';
 
 @Controller('payments')
 @UseGuards(JwtAuthGuard)
@@ -102,5 +103,13 @@ export class PaymentsController {
             throw new NotFoundException('Payment information does not exist or you do not have access.');
         }
         return payment;
+    }
+
+    @Delete('all')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Role('admin')
+    @HttpCode(HttpStatus.NO_CONTENT)
+    async deleteAllPayments(): Promise<void> {
+        await this.paymentsService.deleteAllPayments();
     }
 }
