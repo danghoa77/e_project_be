@@ -88,7 +88,7 @@ export class TalkjsService {
         const url = `https://api.talkjs.com/v1/${this.talkjsAppId}/conversations/${conversationId}`;
 
         const conversationData = {
-            participants: participantIds.map((id) => ({ userId: id })),
+            participants: participantIds,
             subject: subject,
         };
 
