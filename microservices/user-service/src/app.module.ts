@@ -5,7 +5,8 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { JwtModule } from '@nestjs/jwt';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
-import { RedisModule, MailerModule } from '@app/common-auth';
+import { TalkjsLocalModule } from './talkjs/talkjs.module';
+import { RedisModule, MailerModule, TalkjsModule } from '@app/common-auth';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 @Module({
@@ -33,7 +34,9 @@ import { AppService } from './app.service';
     UsersModule,
     AuthModule,
     RedisModule,
+    TalkjsModule,
     MailerModule,
+    TalkjsLocalModule,
   ],
   controllers: [AppController],
   providers: [AppService],

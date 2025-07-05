@@ -5,7 +5,7 @@ import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { RedisService } from '@app/common-auth';
+import { RedisService, TalkjsService } from '@app/common-auth';
 import { UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { UserDocument } from '../schemas/user.schema';
@@ -25,6 +25,9 @@ const mockConfigService = {
     get: jest.fn(),
 };
 const mockMailerService = {
+    sendMail: jest.fn(),
+};
+const mockTalkJsService = {
     sendMail: jest.fn(),
 };
 
@@ -47,6 +50,7 @@ describe('AuthService', () => {
                 { provide: RedisService, useValue: mockRedisService },
                 { provide: ConfigService, useValue: mockConfigService },
                 { provide: MailerService, useValue: mockMailerService },
+                { provide: TalkjsService, useValue: mockTalkJsService },
             ],
         }).compile();
 
@@ -73,7 +77,7 @@ describe('AuthService', () => {
             mockUsersService.findByEmail.mockResolvedValue(mockUserDocument);
             (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
-            const result = await service.validateUser('test@test.com', 'password');
+            const result = await service.validateUser('some-user-id-123', 'test@test.com', 'password');
 
             expect(result).toEqual(mockUserDocument);
             expect(mockUsersService.findByEmail).toHaveBeenCalledWith('test@test.com');
@@ -82,7 +86,7 @@ describe('AuthService', () => {
         it('should return null if user is not found', async () => {
             mockUsersService.findByEmail.mockResolvedValue(null);
 
-            const result = await service.validateUser('wrong@test.com', 'password');
+            const result = await service.validateUser('some-user-id-123', 'wrong@test.com', 'password');
             expect(result).toBeNull();
         });
 
@@ -91,7 +95,7 @@ describe('AuthService', () => {
             mockUsersService.findByEmail.mockResolvedValue(mockUser);
             (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
-            const result = await service.validateUser('test@test.com', 'wrongpassword');
+            const result = await service.validateUser('some-user-id-123', 'test@test.com', 'wrongpassword');
             expect(result).toBeNull();
         });
     });

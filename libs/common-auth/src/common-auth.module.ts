@@ -5,7 +5,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { RedisModule } from './redis/redis.module';
-
+import { TalkjsModule } from './talkjs/talkjs.module'; 
 @Module({
   imports: [
     ConfigModule,
@@ -21,9 +21,10 @@ import { RedisModule } from './redis/redis.module';
       inject: [ConfigService],
     }),
     RedisModule,
+    TalkjsModule,
   ],
 
   providers: [JwtStrategy],
-  exports: [PassportModule, JwtModule, JwtStrategy, RedisModule],
+  exports: [PassportModule, JwtModule, JwtStrategy, RedisModule, TalkjsModule],
 })
 export class CommonAuthModule {}

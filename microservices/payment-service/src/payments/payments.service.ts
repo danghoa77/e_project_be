@@ -196,4 +196,16 @@ export class PaymentsService {
     async getPaymentByOrderId(orderId: string): Promise<Payment | null> {
         return this.paymentModel.findOne({ orderId: new Types.ObjectId(orderId) }).exec();
     }
+
+    async deleteAllPayments(): Promise<{ acknowledged: boolean; deletedCount: number }> {
+        try {
+            this.logger.warn('Attempting to delete ALL payment records from the database. This action is irreversible.');
+            const result = await this.paymentModel.deleteMany({}).exec();
+            this.logger.log(`Successfully deleted ${result.deletedCount} payment records.`);
+            return result;
+        } catch (error) {
+            this.logger.error(`Failed to delete all payment records: ${error.message}`, error.stack);
+            throw new InternalServerErrorException('Failed to delete all payment records.');
+        }
+    }
 }

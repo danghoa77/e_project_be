@@ -16,3 +16,6 @@ export * from './strategies/jwt.strategy';
 
 export * from './mailler/mailer.module';
 export * from './mailler/mailer.service';
+
+export * from './talkjs/talkjs.module';
+export * from './talkjs/talkjs.service';

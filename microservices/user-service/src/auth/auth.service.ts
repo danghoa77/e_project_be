@@ -4,7 +4,7 @@ import * as bcrypt from 'bcryptjs';
 import { UsersService } from '../users/users.service';
 import { RegisterUserDto } from '../users/dto/register-user.dto';
 import { UserDocument } from '../schemas/user.schema';
-import { RedisService, MailerService } from '@app/common-auth';
+import { RedisService, MailerService, TalkjsService } from '@app/common-auth';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
@@ -17,9 +17,10 @@ export class AuthService {
         private jwtService: JwtService,
         private redisService: RedisService,
         private configService: ConfigService,
+        private talkjsService: TalkjsService,
     ) { }
 
-    async validateUser(email: string, pass: string): Promise<UserDocument | null> {
+    async validateUser(_id: string, email: string, pass: string): Promise<UserDocument | null> {
         const user = await this.usersService.findByEmail(email);
         if (user && (await bcrypt.compare(pass, user.password))) {
             return user as UserDocument;
@@ -51,7 +52,15 @@ export class AuthService {
             throw new BadRequestException('Email already exists.');
         }
         const newUser = await this.usersService.createUser(registerUserDto);
+        await this.talkjsService.upsertUser({
+            _id: newUser._id.toString(),
+            name: newUser.name,
+            email: newUser.email,
+            role: newUser.role,
+            phone: newUser.phone,
+        });
         this.logger.log(`User ${newUser.email} registered successfully.`);
+        this.logger.log(`User ${newUser._id} TalkJs registered successfully.`);
         try {
             await this.mailerService.sendMail(
                 {
