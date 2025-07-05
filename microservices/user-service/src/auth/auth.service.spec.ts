@@ -5,7 +5,7 @@ import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { RedisService } from '@app/common-auth';
+import { RedisService, TalkjsService } from '@app/common-auth';
 import { UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { UserDocument } from '../schemas/user.schema';
@@ -25,6 +25,9 @@ const mockConfigService = {
     get: jest.fn(),
 };
 const mockMailerService = {
+    sendMail: jest.fn(),
+};
+const mockTalkJsService = {
     sendMail: jest.fn(),
 };
 
@@ -47,6 +50,7 @@ describe('AuthService', () => {
                 { provide: RedisService, useValue: mockRedisService },
                 { provide: ConfigService, useValue: mockConfigService },
                 { provide: MailerService, useValue: mockMailerService },
+                { provide: TalkjsService, useValue: mockTalkJsService },
             ],
         }).compile();
 
