@@ -6,7 +6,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/users.module';
 import { LocalStrategy } from './strategies/local.strategy';
-import { RedisModule, JwtStrategy, MailerModule } from '@app/common-auth';
+import { RedisModule, JwtStrategy, MailerModule, GoogleAuthService, GoogleStrategy } from '@app/common-auth';
 
 @Module({
     imports: [
@@ -27,6 +27,6 @@ import { RedisModule, JwtStrategy, MailerModule } from '@app/common-auth';
         }),
     ],
     controllers: [AuthController],
-    providers: [AuthService, LocalStrategy, JwtStrategy],
+    providers: [AuthService, LocalStrategy, JwtStrategy, GoogleStrategy, GoogleAuthService,],
 })
 export class AuthModule { }

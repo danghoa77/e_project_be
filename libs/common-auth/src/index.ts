@@ -19,3 +19,6 @@ export * from './mailler/mailer.service';
 
 export * from './talkjs/talkjs.module';
 export * from './talkjs/talkjs.service';
+
+export * from './strategies/google.strategy';
+export * from './auth-providers/google-auth.service';
