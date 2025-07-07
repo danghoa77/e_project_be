@@ -26,8 +26,14 @@ import { GoogleAuthService } from './auth-providers/google-auth.service';
     TalkjsModule,
   ],
 
-  providers: [JwtStrategy, GoogleStrategy,
-    GoogleAuthService,],
-  exports: [PassportModule, JwtModule, JwtStrategy, RedisModule, TalkjsModule, GoogleAuthService],
+  providers: [JwtStrategy, GoogleStrategy, GoogleAuthService],
+  exports: [
+    PassportModule,
+    JwtModule,
+    JwtStrategy,
+    RedisModule,
+    TalkjsModule,
+    GoogleAuthService,
+  ],
 })
-export class CommonAuthModule { }
+export class CommonAuthModule {}
