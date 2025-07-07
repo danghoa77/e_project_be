@@ -42,6 +42,11 @@ export class User {
     @Prop({ enum: ['customer', 'admin'], default: 'customer' })
     role: 'customer' | 'admin';
 
+    @Prop({ type: String, unique: true, sparse: true })
+    googleId?: string;
+
+    @Prop({ type: String })
+    photoUrl?: string;
 
     @Prop({
         type: [AddressSchema],
@@ -55,3 +60,5 @@ export class User {
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
+UserSchema.index({ email: 1 });
+UserSchema.index({ googleId: 1 }, { unique: true, sparse: true });

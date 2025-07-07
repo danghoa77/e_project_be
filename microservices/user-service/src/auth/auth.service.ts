@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, InternalServerErrorException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { UsersService } from '../users/users.service';
@@ -19,6 +19,66 @@ export class AuthService {
         private configService: ConfigService,
         private talkjsService: TalkjsService,
     ) { }
+
+    async validateGoogleUser(
+        googleId: string,
+        email: string,
+        firstName: string,
+        lastName: string,
+        picture: string,
+        accessToken: string,
+    ): Promise<any> {
+        // 1. Tìm người dùng dựa trên email hoặc googleId
+        let user = await this.usersService.findByEmail(email);
+
+        if (!user) {
+            // 2. Nếu người dùng không tồn tại, tạo tài khoản mới (đăng ký)
+            this.logger.log(`Google user '${email}' not found. Creating new account.`);
+            // Tạo mật khẩu ngẫu nhiên hoặc placeholder nếu bắt buộc
+            const temporaryPassword = await bcrypt.hash(googleId + Date.now(), 10);
+            user = await this.usersService.createUser({
+                email: email,
+                password: temporaryPassword, // Mật khẩu tạm thời
+                name: `${firstName} ${lastName}`,
+                phone: '', // Có thể yêu cầu người dùng cập nhật sau
+                role: 'customer', // Mặc định là customer
+                // Lưu googleId vào user model nếu bạn muốn liên kết tài khoản
+                googleId: googleId, // Bạn cần thêm trường googleId vào user.schema.ts
+                photoUrl: picture, // Có thể lưu avatar
+            } as any); // Cast tạm thời để phù hợp với CreateUserDto
+
+            if (!user) {
+                throw new InternalServerErrorException('Failed to create user from Google OAuth.');
+            }
+        } else {
+            // 3. Nếu người dùng tồn tại, cập nhật thông tin nếu cần (vd: googleId nếu chưa có)
+            // Đảm bảo user._id là string hoặc ObjectId để sử dụng trong usersService.update
+            const userIdString = user._id.toString();
+
+            // Cập nhật thông tin Google Id và PhotoUrl nếu chưa có
+            if (!user.googleId || user.googleId !== googleId || !user.photoUrl || user.photoUrl !== picture) {
+                await this.usersService.updateProfile(userIdString, {
+                    googleId: googleId,
+                    photoUrl: picture,
+                } as any); // Cast tạm thời
+            }
+        }
+
+        // 4. Cấp JWT của hệ thống cho người dùng này
+        const payload = {
+            userId: user._id.toString(),
+            email: user.email,
+            role: user.role,
+            name: user.name, // Thêm name, phone nếu cần cho JWT payload
+            phone: user.phone,
+        };
+        const accessTokenGG = this.jwtService.sign(payload);
+
+        // 5. Lưu session vào Redis (nếu bạn sử dụng session trong Redis)
+        await this.redisService.set(`user-session:${user._id.toString()}`, JSON.stringify(payload), 3600); // TTL 1h
+
+        return { user, accessTokenGG };
+    }
 
     async validateUser(_id: string, email: string, pass: string): Promise<UserDocument | null> {
         const user = await this.usersService.findByEmail(email);

@@ -5,7 +5,9 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { RedisModule } from './redis/redis.module';
-import { TalkjsModule } from './talkjs/talkjs.module'; 
+import { TalkjsModule } from './talkjs/talkjs.module';
+import { GoogleStrategy } from './strategies/google.strategy';
+import { GoogleAuthService } from './auth-providers/google-auth.service';
 @Module({
   imports: [
     ConfigModule,
@@ -24,7 +26,8 @@ import { TalkjsModule } from './talkjs/talkjs.module';
     TalkjsModule,
   ],
 
-  providers: [JwtStrategy],
-  exports: [PassportModule, JwtModule, JwtStrategy, RedisModule, TalkjsModule],
+  providers: [JwtStrategy, GoogleStrategy,
+    GoogleAuthService,],
+  exports: [PassportModule, JwtModule, JwtStrategy, RedisModule, TalkjsModule, GoogleAuthService],
 })
-export class CommonAuthModule {}
+export class CommonAuthModule { }
