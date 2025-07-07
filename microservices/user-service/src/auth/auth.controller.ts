@@ -8,7 +8,8 @@ import {
     Res,
     Get,
     HttpCode,
-    HttpStatus
+    HttpStatus,
+    BadRequestException
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterUserDto } from '../users/dto/register-user.dto';
@@ -17,6 +18,8 @@ import { RolesGuard, JwtAuthGuard, Role } from '@app/common-auth';
 import { LocalAuthGuard } from './strategies/local-auth.guard';
 import { AuthGuard } from '@nestjs/passport';
 import { Request, Response } from 'express';
+import { ConfigService } from '@nestjs/config';
+import { UserDocument } from '../schemas/user.schema';
 
 // Cập nhật AuthenticatedUser interface để phản ánh các trường có thể undefined
 interface AuthenticatedUser {
@@ -38,7 +41,10 @@ interface AuthenticatedUser {
 
 @Controller('auth')
 export class AuthController {
-    constructor(private authService: AuthService) { }
+    constructor(
+        private authService: AuthService,
+        private configService: ConfigService
+    ) { }
 
     // --- GOOGLE AUTH ROUTES ---
     @Get('google')
@@ -50,26 +56,28 @@ export class AuthController {
     async googleAuthRedirect(@Req() req: Request, @Res() res: Response) {
         const googleUser = req.user as AuthenticatedUser;
 
-        // Cẩn thận khi truyền các giá trị có thể undefined
-        // Cách 1: Sử dụng toán tử !! (ép kiểu về boolean rồi về string) hoặc String()
-        // Cách 2: Cung cấp giá trị mặc định nếu là undefined (ví dụ: || '')
-        // Cách 3: Sửa validateGoogleUser để chấp nhận string | undefined
+        try {
+            const result = await this.authService.validateGoogleUser(
+                googleUser.googleId || '', // Cung cấp giá trị mặc định nếu undefined
+                googleUser.email || '',
+                googleUser.firstName || '',
+                googleUser.lastName || '',
+                googleUser.picture || '',
+                googleUser.accessToken || '',
+            );
 
-        // Tôi sẽ dùng Cách 2 để đảm bảo các tham số luôn là string, 
-        // mặc dù Cách 3 là linh hoạt hơn cho AuthService.
-        const result = await this.authService.validateGoogleUser(
-            googleUser.googleId || '', // Cung cấp giá trị mặc định nếu undefined
-            googleUser.email || '',
-            googleUser.firstName || '',
-            googleUser.lastName || '',
-            googleUser.picture || '',
-            googleUser.accessToken || '',
-        );
-
-        if (result && result.accessToken) {
-            res.redirect(`http://localhost:3000/auth-success?token=${result.accessToken}`);
-        } else {
-            res.redirect('http://localhost:3000/auth-failure');
+            if (result && result.accessTokenGG) {
+                // Use environment variable for frontend URL or fall back to localhost
+                const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+                res.redirect(`${frontendUrl}/auth-success?token=${result.accessTokenGG}`);
+            } else {
+                const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+                res.redirect(`${frontendUrl}/auth-failure`);
+            }
+        } catch (error) {
+            console.error('Google auth error:', error);
+            const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+            res.redirect(`${frontendUrl}/auth-failure`);
         }
     }
     // --- END GOOGLE AUTH ROUTES ---
@@ -84,7 +92,8 @@ export class AuthController {
     @Post('login')
     @HttpCode(HttpStatus.OK)
     async login(@Req() req: Request) {
-        return this.authService.login(req.user as AuthenticatedUser);
+        // req.user from LocalAuthGuard should be a UserDocument
+        return this.authService.login(req.user as UserDocument);
     }
 
     @UseGuards(JwtAuthGuard)
