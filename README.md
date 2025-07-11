@@ -97,65 +97,66 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
 
-# E-Commerce Mobile App
+# 📱 E-Commerce Mobile App
 
-A comprehensive e-commerce mobile application built with **Expo** and **TypeScript** that integrates with your existing e-commerce backend microservices.
+A comprehensive e-commerce mobile application built with **Expo** and **TypeScript** that provides a modern shopping experience for your customers.
+
+![Expo](https://img.shields.io/badge/Expo-52.0.0-000020?style=for-the-badge&logo=expo)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.3.3-3178C6?style=for-the-badge&logo=typescript)
+![React Native](https://img.shields.io/badge/React_Native-0.76.3-61DAFB?style=for-the-badge&logo=react)
+![Redux](https://img.shields.io/badge/Redux_Toolkit-2.8.2-764ABC?style=for-the-badge&logo=redux)
 
 ## 🚀 Features
 
 ### 🔐 Authentication & User Management
-- **Email/Password Login & Registration**
-- **Google OAuth Integration**
-- **JWT Token Management**
-- **Profile Management**
-- **Password Reset & Change**
-- **Email Verification**
+- ✅ **Email/Password Login & Registration**
+- ✅ **Google OAuth Integration**
+- ✅ **JWT Token Management** with auto-refresh
+- ✅ **Profile Management** with avatar upload
+- ✅ **Password Reset & Change**
+- ✅ **Email Verification**
 
 ### 🛍️ Product Catalog
-- **Product Browsing with Categories**
-- **Advanced Search & Filtering**
-- **Product Details with Image Gallery**
-- **Product Reviews & Ratings**
-- **Wishlist Functionality**
-- **Barcode Scanner for Quick Product Lookup**
+- ✅ **Product Browsing** with categories
+- ✅ **Advanced Search & Filtering**
+- ✅ **Product Details** with image gallery
+- ✅ **Product Reviews & Ratings**
+- ✅ **Wishlist Functionality**
+- ✅ **Barcode Scanner** for quick product lookup
 
 ### 🛒 Shopping Cart & Orders
-- **Add/Remove Items from Cart**
-- **Quantity Management**
-- **Order Placement & Tracking**
-- **Order History**
-- **Order Status Updates**
+- ✅ **Add/Remove Items** from cart
+- ✅ **Quantity Management**
+- ✅ **Order Placement & Tracking**
+- ✅ **Order History** with detailed views
+- ✅ **Order Status Updates** in real-time
 
 ### 💳 Payment Integration
-- **Stripe Payment Processing**
-- **Multiple Payment Methods**
-- **Payment History**
-- **Secure Transactions**
+- ✅ **Stripe Payment Processing**
+- ✅ **Multiple Payment Methods**
+- ✅ **Payment History**
+- ✅ **Secure Transactions**
 
-### 💬 Real-time Chat
-- **Customer Support Chat**
-- **TalkJS Integration**
-- **Real-time Messaging**
-- **File & Image Sharing**
+### 💬 Real-time Communication
+- ✅ **Customer Support Chat**
+- ✅ **TalkJS Integration**
+- ✅ **Real-time Messaging**
+- ✅ **File & Image Sharing**
 
 ### 🔔 Notifications
-- **Push Notifications**
-- **Order Updates**
-- **Promotional Notifications**
+- ✅ **Push Notifications**
+- ✅ **Order Updates**
+- ✅ **Promotional Notifications**
 
-### 🎨 UI/UX Features
-- **Modern Material Design 3**
-- **Dark/Light Theme Support**
-- **Responsive Design**
-- **Smooth Animations**
-- **Intuitive Navigation**
-- **Offline Support**
+### 🎨 Modern UI/UX
+- ✅ **Material Design 3**
+- ✅ **Dark/Light Theme Support**
+- ✅ **Responsive Design**
+- ✅ **Smooth Animations**
+- ✅ **Intuitive Navigation**
+- ✅ **Offline Support**
 
-## 📱 Screenshots
-
-*Screenshots will be added once the app is running*
-
-## 🛠️ Tech Stack
+## ️ Tech Stack
 
 - **Frontend**: React Native (Expo)
 - **Language**: TypeScript
@@ -174,109 +175,80 @@ A comprehensive e-commerce mobile application built with **Expo** and **TypeScri
 - npm or yarn
 - Expo CLI (`npm install -g @expo/cli`)
 - iOS Simulator (for iOS development) or Android Emulator (for Android development)
-- Your backend services running (user-service, product-service, order-service, payment-service)
+- Your backend services running
 
-## ⚙️ Installation & Setup
+## ⚡ Quick Start
 
-### 1. Clone and Setup the Mobile App
+### 1. Clone the Repository
 
 ```bash
-# Navigate to your mobile app directory
-cd ecommerce-mobile-app
+git clone https://github.com/danghoa77/mobile_e.git
+cd mobile_e
+```
 
-# Install dependencies
+### 2. Install Dependencies
+
+```bash
 npm install
+```
 
-# If you encounter any dependency issues, try:
+If you encounter dependency issues:
+```bash
 npx expo install --fix
 ```
 
-### 2. Configure Environment Variables
+### 3. Configure Environment
 
-Create a `.env` file in the root directory:
+Copy the environment example file:
+```bash
+cp .env.example .env
+```
 
+Update `.env` with your configuration:
 ```env
 # API Configuration
 API_BASE_URL=http://your-backend-url:3000
-API_TIMEOUT=30000
 
 # Stripe Configuration
-STRIPE_PUBLISHABLE_KEY=pk_test_your_stripe_publishable_key
+STRIPE_PUBLISHABLE_KEY=pk_test_your_stripe_key
 
 # Google OAuth Configuration
-GOOGLE_IOS_CLIENT_ID=your-ios-client-id.googleusercontent.com
-GOOGLE_ANDROID_CLIENT_ID=your-android-client-id.googleusercontent.com
-GOOGLE_WEB_CLIENT_ID=your-web-client-id.googleusercontent.com
+GOOGLE_IOS_CLIENT_ID=your-ios-client-id
+GOOGLE_ANDROID_CLIENT_ID=your-android-client-id
+GOOGLE_WEB_CLIENT_ID=your-web-client-id
 
 # TalkJS Configuration
 TALKJS_APP_ID=your-talkjs-app-id
 ```
 
-### 3. Update API Base URL
+### 4. Update API Base URL
 
-Update the `API_BASE_URL` in `src/constants/index.ts`:
-
+Edit `src/constants/index.ts`:
 ```typescript
-export const API_BASE_URL = 'http://your-backend-url:3000'; // Update with your backend URL
+export const API_BASE_URL = 'http://your-backend-url:3000';
 ```
 
-### 4. Configure Backend Integration
-
-Make sure your backend services are running and accessible:
-
-- **User Service**: Port 3001
-- **Product Service**: Port 3002  
-- **Order Service**: Port 3003
-- **Payment Service**: Port 3004
-- **API Gateway**: Port 3000
-
-### 5. Setup Third-Party Services
-
-#### Stripe Setup
-1. Create a Stripe account at https://stripe.com
-2. Get your publishable key from the Stripe dashboard
-3. Update `STRIPE_PUBLISHABLE_KEY` in your constants
-
-#### Google OAuth Setup
-1. Go to Google Cloud Console
-2. Create OAuth 2.0 credentials
-3. Configure authorized redirect URIs
-4. Update the Google client IDs in constants
-
-#### TalkJS Setup (Optional)
-1. Create a TalkJS account at https://talkjs.com
-2. Get your App ID
-3. Update TalkJS configuration
-
-## 🚀 Running the App
-
-### Start the Development Server
+### 5. Start Development Server
 
 ```bash
-# Start Expo development server
-npx expo start
-
-# Or with specific platform
-npx expo start --ios
-npx expo start --android
-npx expo start --web
+npm start
 ```
 
-### Run on Device/Simulator
+### 6. Run on Device/Simulator
 
-1. **iOS**: Press `i` in the terminal or scan QR code with Camera app
-2. **Android**: Press `a` in the terminal or scan QR code with Expo Go app
-3. **Web**: Press `w` in the terminal
+- **iOS**: Press `i` or scan QR code with Camera app
+- **Android**: Press `a` or scan QR code with Expo Go app
+- **Web**: Press `w`
 
 ## 📁 Project Structure
 
 ```
-ecommerce-mobile-app/
+mobile_e/
 ├── src/
 │   ├── components/           # Reusable UI components
-│   │   ├── common/          # Common components (buttons, inputs, etc.)
-│   │   ├── product/         # Product-specific components
-│   │   ├── cart/            # Cart-related components
+│   │   ├── common/          # Common components
+│   │   ├── product/         # Product components
+│   │   ├── cart/            # Cart components
 │   │   ├── auth/            # Authentication components
 │   │   ├── chat/            # Chat components
 │   │   └── payment/         # Payment components
@@ -290,98 +262,133 @@ ecommerce-mobile-app/
 │   │   └── chat/            # Chat screens
 │   ├── navigation/          # Navigation configuration
 │   ├── services/            # API services
+│   │   └── api.ts          # Main API service
 │   ├── store/               # Redux store & slices
-│   ├── types/               # TypeScript type definitions
+│   │   ├── index.ts        # Store configuration
+│   │   └── slices/         # Redux slices
+│   ├── types/               # TypeScript definitions
 │   ├── utils/               # Utility functions
 │   └── constants/           # App constants & theme
+├── assets/                  # App assets (icons, images)
 ├── App.tsx                  # Main app component
 ├── app.json                 # Expo configuration
-└── package.json             # Dependencies
+├── package.json             # Dependencies
+└── README.md               # This file
 ```
 
-## 🔧 Key Components
+## 🔧 Backend Integration
 
-### Authentication Flow
-- Login/Register screens with validation
-- Google OAuth integration
-- JWT token management with auto-refresh
-- Profile management
+This app integrates with a microservices backend:
 
-### Product Catalog
-- Grid/List view toggle
-- Search with debouncing
-- Category filtering
-- Sort options (price, rating, name)
-- Product detail with image carousel
+### Required Services
+- **User Service** (Port 3001) - Authentication & profiles
+- **Product Service** (Port 3002) - Product catalog
+- **Order Service** (Port 3003) - Shopping cart & orders
+- **Payment Service** (Port 3004) - Payment processing
+- **API Gateway** (Port 3000) - Main entry point
 
-### Shopping Cart
-- Add/remove items
-- Quantity adjustment
-- Real-time price calculation
-- Persistent cart data
+### API Endpoints
 
-### Checkout Process
-- Address management
-- Payment method selection
-- Stripe payment integration
-- Order confirmation
+The app expects these endpoints to be available:
 
-### Order Management
-- Order history with status tracking
-- Order details view
-- Cancel/return options
-
-## 🌐 API Integration
-
-The app integrates with your existing microservices:
-
-### Authentication Endpoints
+#### Authentication
 - `POST /auth/login` - User login
 - `POST /auth/register` - User registration
 - `POST /auth/google` - Google OAuth
 - `GET /auth/profile` - Get user profile
-- `PATCH /auth/profile` - Update profile
 
-### Product Endpoints
+#### Products
 - `GET /products` - Get products with filters
 - `GET /products/:id` - Get product details
 - `GET /products/search` - Search products
-- `GET /products/categories` - Get categories
 
-### Cart Endpoints
+#### Cart & Orders
 - `GET /cart` - Get user cart
 - `POST /cart/add` - Add item to cart
-- `PATCH /cart/update` - Update cart item
-- `DELETE /cart/remove/:id` - Remove item
-
-### Order Endpoints
 - `GET /orders` - Get user orders
 - `POST /orders` - Create new order
-- `GET /orders/:id` - Get order details
-- `PATCH /orders/:id/cancel` - Cancel order
 
-### Payment Endpoints
+#### Payments
 - `POST /payments/create-intent` - Create payment intent
 - `POST /payments/confirm` - Confirm payment
-- `GET /payments/history` - Payment history
 
-## 🎨 Theming & Customization
+## 🎨 Customization
 
-The app uses Material Design 3 with custom theming:
+### Theme Customization
 
-- **Colors**: Customizable color palette in `src/constants/index.ts`
-- **Typography**: Consistent text styles
-- **Spacing**: Standardized spacing system
-- **Components**: Themed UI components
+Edit `src/constants/index.ts` to customize colors:
 
-### Customizing Theme
 ```typescript
-// src/constants/index.ts
 export const COLORS = {
-  primary: '#6366F1',      // Change primary color
-  secondary: '#EC4899',    // Change secondary color
+  primary: '#6366F1',      // Your brand primary color
+  secondary: '#EC4899',    // Your brand secondary color
   // ... other colors
 };
+```
+
+### App Configuration
+
+Update `app.json` for your app:
+
+```json
+{
+  "expo": {
+    "name": "Your App Name",
+    "slug": "your-app-slug",
+    "ios": {
+      "bundleIdentifier": "com.yourcompany.yourapp"
+    },
+    "android": {
+      "package": "com.yourcompany.yourapp"
+    }
+  }
+}
+```
+
+## � Building for Production
+
+### Using EAS Build (Recommended)
+
+```bash
+# Install EAS CLI
+npm install -g @expo/eas-cli
+
+# Login to Expo
+eas login
+
+# Configure build
+eas build:configure
+
+# Build for production
+eas build --platform all --profile production
+```
+
+### Legacy Expo Build
+
+```bash
+# Build for iOS
+expo build:ios
+
+# Build for Android
+expo build:android
+```
+
+## � Testing
+
+### On Physical Device
+
+1. Install **Expo Go** app from App Store/Play Store
+2. Run `npm start`
+3. Scan QR code with Expo Go
+
+### On Simulator/Emulator
+
+```bash
+# iOS Simulator
+npm run ios
+
+# Android Emulator  
+npm run android
 ```
 
 ## 🔐 Security Features
@@ -392,71 +399,22 @@ export const COLORS = {
 - Secure payment processing with Stripe
 - Protected routes and authentication guards
 
-## 📱 Platform-Specific Features
+## 🌍 Environment Support
 
-### iOS
-- Native navigation animations
-- Haptic feedback
-- Apple Pay integration (future)
+- **Development**: Local development with hot reload
+- **Staging**: Testing environment
+- **Production**: Live app environment
 
-### Android
-- Material Design components
-- Android back button handling
-- Google Pay integration (future)
+## 📚 Available Scripts
 
-## 🧪 Testing
-
-```bash
-# Run tests (when implemented)
-npm test
-
-# Run linting
-npm run lint
-
-# Run type checking
-npx tsc --noEmit
-```
-
-## 📦 Building for Production
-
-### EAS Build (Recommended)
-```bash
-# Install EAS CLI
-npm install -g @expo/eas-cli
-
-# Configure build
-eas build:configure
-
-# Build for iOS
-eas build --platform ios
-
-# Build for Android
-eas build --platform android
-```
-
-### Expo Build (Legacy)
-```bash
-# Build for iOS
-expo build:ios
-
-# Build for Android
-expo build:android
-```
-
-## 🚀 Deployment
-
-### App Stores
-1. **iOS App Store**: Use EAS Submit or Xcode
-2. **Google Play Store**: Use EAS Submit or Google Play Console
-
-### Over-the-Air Updates
-```bash
-# Publish update
-expo publish
-
-# Or with EAS Update
-eas update
-```
+- `npm start` - Start development server
+- `npm run ios` - Run on iOS simulator
+- `npm run android` - Run on Android emulator
+- `npm run web` - Run on web browser
+- `npm run build` - Build the app
+- `npm run lint` - Run ESLint
+- `npm test` - Run tests
+- `npm run type-check` - Check TypeScript types
 
 ## 🐛 Troubleshooting
 
@@ -469,7 +427,7 @@ eas update
 
 2. **Dependencies not found**
    ```bash
-   rm -rf node_modules
+   rm -rf node_modules package-lock.json
    npm install
    npx expo install --fix
    ```
@@ -486,27 +444,27 @@ eas update
 
 ### Backend Connection Issues
 - Ensure your backend services are running
-- Check API_BASE_URL configuration
+- Check `API_BASE_URL` configuration
 - Verify CORS settings on your backend
-- Check network connectivity
+- Test API endpoints with Postman
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License.
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## 📞 Support
 
 For support and questions:
-- Create an issue in the repository
-- Check the troubleshooting guide
+- Create an issue in this repository
+- Check the troubleshooting guide above
 - Review the API documentation
 
 ## 🔮 Future Enhancements
@@ -517,18 +475,16 @@ For support and questions:
 - [ ] Social sharing features
 - [ ] Advanced analytics
 - [ ] Multi-language support
-- [ ] Inventory management for sellers
-- [ ] Advanced search with AI
 - [ ] Loyalty program integration
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Ready to Get Started?
 
-1. **Start your backend services**
-2. **Update API_BASE_URL in constants**
-3. **Run `npm install`**
-4. **Run `npx expo start`**
-5. **Scan QR code with Expo Go app**
+1. **Clone this repository**
+2. **Install dependencies** with `npm install`
+3. **Configure your environment** variables
+4. **Start the development server** with `npm start`
+5. **Scan QR code** with Expo Go app
 
-That's it! Your e-commerce mobile app should now be running and connected to your backend services.
+Happy coding! 🎉
