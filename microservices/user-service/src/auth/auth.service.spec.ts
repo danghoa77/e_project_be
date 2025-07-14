@@ -67,11 +67,15 @@ describe('AuthService', () => {
         it('should return the full user document if validation is successful', async () => {
             const mockUserDocument = {
                 email: 'test@test.com',
-                password: 'hashedpassword',
                 name: 'Test User',
                 role: 'customer',
-                toObject: () => mockUserDocument,
+                toObject: jest.fn().mockReturnValue({
+                    email: 'test@test.com',
+                    name: 'Test User',
+                    role: 'customer',
+                }),
             };
+
 
             mockUsersService.findByEmail.mockResolvedValue(mockUserDocument);
             (bcrypt.compare as jest.Mock).mockResolvedValue(true);
