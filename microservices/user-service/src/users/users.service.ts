@@ -2,7 +2,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User, Address } from '../schemas/user.schema';
+import { User, UserDocument, Address } from '../schemas/user.schema';
 import { GetUserDto } from './dto/get-user.dto';
 import { plainToClass } from 'class-transformer';
 import * as bcrypt from 'bcryptjs';
@@ -16,11 +16,11 @@ export class UsersService {
         private readonly redisService: RedisService,
     ) { }
 
-    async findByEmail(email: string): Promise<User | null> {
+    async findByEmail(email: string): Promise<UserDocument | null> {
         return this.userModel.findOne({ email }).select('+password').exec();
     }
 
-    async createUser(userData: Partial<User>): Promise<User> {
+    async createUser(userData: Partial<User>): Promise<UserDocument> {
         const hashedPassword = await bcrypt.hash(userData.password!, 10); //  (!)
         const createdUser = new this.userModel({
             ...userData,
