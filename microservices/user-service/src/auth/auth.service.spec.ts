@@ -66,7 +66,6 @@ describe('AuthService', () => {
     describe('validateUser', () => {
         it('should return the full user document if validation is successful', async () => {
             const mockUserDocument = {
-                _id: 'some-user-id-123',
                 email: 'test@test.com',
                 password: 'hashedpassword',
                 name: 'Test User',
@@ -77,7 +76,7 @@ describe('AuthService', () => {
             mockUsersService.findByEmail.mockResolvedValue(mockUserDocument);
             (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
-            const result = await service.validateUser('some-user-id-123', 'test@test.com', 'password');
+            const result = await service.validateUser('test@test.com', 'password');
 
             expect(result).toEqual(mockUserDocument);
             expect(mockUsersService.findByEmail).toHaveBeenCalledWith('test@test.com');
@@ -86,7 +85,7 @@ describe('AuthService', () => {
         it('should return null if user is not found', async () => {
             mockUsersService.findByEmail.mockResolvedValue(null);
 
-            const result = await service.validateUser('some-user-id-123', 'wrong@test.com', 'password');
+            const result = await service.validateUser('wrong@test.com', 'password');
             expect(result).toBeNull();
         });
 
@@ -95,7 +94,7 @@ describe('AuthService', () => {
             mockUsersService.findByEmail.mockResolvedValue(mockUser);
             (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
-            const result = await service.validateUser('some-user-id-123', 'test@test.com', 'wrongpassword');
+            const result = await service.validateUser('test@test.com', 'wrongpassword');
             expect(result).toBeNull();
         });
     });
