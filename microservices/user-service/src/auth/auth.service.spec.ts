@@ -5,11 +5,10 @@ import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { RedisService, TalkjsService } from '@app/common-auth';
+import { RedisService, TalkjsService, MailerService } from '@app/common-auth';
 import { UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { UserDocument } from '../schemas/user.schema';
-import { MailerService } from '@app/common-auth';
 
 const mockUsersService = {
     findByEmail: jest.fn(),
@@ -31,20 +30,18 @@ const mockTalkJsService = {
     sendMail: jest.fn(),
 };
 
+// Mock bcrypt
 jest.mock('bcryptjs', () => ({
     compare: jest.fn(),
 }));
-
 
 describe('AuthService', () => {
     let service: AuthService;
 
     beforeEach(async () => {
-
         const module: TestingModule = await Test.createTestingModule({
             providers: [
                 AuthService,
-
                 { provide: UsersService, useValue: mockUsersService },
                 { provide: JwtService, useValue: mockJwtService },
                 { provide: RedisService, useValue: mockRedisService },
@@ -55,7 +52,6 @@ describe('AuthService', () => {
         }).compile();
 
         service = module.get<AuthService>(AuthService);
-
         jest.clearAllMocks();
     });
 
@@ -64,11 +60,12 @@ describe('AuthService', () => {
     });
 
     describe('validateUser', () => {
-        it('should return the full user document if validation is successful', async () => {
+        it('should return the full user object if validation is successful', async () => {
             const mockUserDocument = {
                 email: 'test@test.com',
                 name: 'Test User',
                 role: 'customer',
+                password: 'hashedpassword',
                 toObject: jest.fn().mockReturnValue({
                     email: 'test@test.com',
                     name: 'Test User',
@@ -76,52 +73,64 @@ describe('AuthService', () => {
                 }),
             };
 
-
             mockUsersService.findByEmail.mockResolvedValue(mockUserDocument);
             (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
             const result = await service.validateUser('test@test.com', 'password');
 
-            expect(result).toEqual(mockUserDocument);
             expect(mockUsersService.findByEmail).toHaveBeenCalledWith('test@test.com');
+            expect(bcrypt.compare).toHaveBeenCalledWith('password', 'hashedpassword');
+            expect(result).toEqual({
+                email: 'test@test.com',
+                name: 'Test User',
+                role: 'customer',
+            });
         });
 
         it('should return null if user is not found', async () => {
             mockUsersService.findByEmail.mockResolvedValue(null);
 
             const result = await service.validateUser('wrong@test.com', 'password');
+
             expect(result).toBeNull();
+            expect(mockUsersService.findByEmail).toHaveBeenCalledWith('wrong@test.com');
         });
 
         it('should return null if password does not match', async () => {
-            const mockUser = { email: 'test@test.com', password: 'hashedpassword' };
+            const mockUser = {
+                email: 'test@test.com',
+                password: 'hashedpassword',
+            };
+
             mockUsersService.findByEmail.mockResolvedValue(mockUser);
             (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
             const result = await service.validateUser('test@test.com', 'wrongpassword');
+
             expect(result).toBeNull();
+            expect(bcrypt.compare).toHaveBeenCalledWith('wrongpassword', 'hashedpassword');
         });
     });
 
-
     describe('login', () => {
         it('should return an access token', async () => {
-            // Arrange
-            const mockUser = { _id: 'someid', email: 'test@test.com', role: 'customer' };
+            const mockUser = {
+                _id: 'someid',
+                email: 'test@test.com',
+                role: 'customer',
+            } as unknown as UserDocument;
+
             mockConfigService.get.mockReturnValue('1h');
             mockJwtService.sign.mockReturnValue('mockAccessToken');
             mockRedisService.set.mockResolvedValue('OK');
 
-            // Act
-            const result = await service.login(mockUser as UserDocument);
+            const result = await service.login(mockUser);
 
-            // Assert
-            expect(result).toHaveProperty('access_token');
-            expect(result.access_token).toBe('mockAccessToken');
+            expect(result).toHaveProperty('access_token', 'mockAccessToken');
             expect(mockJwtService.sign).toHaveBeenCalledWith({
                 email: 'test@test.com',
                 sub: 'someid',
-                role: 'customer'
+                role: 'customer',
             });
             expect(mockRedisService.set).toHaveBeenCalled();
         });
