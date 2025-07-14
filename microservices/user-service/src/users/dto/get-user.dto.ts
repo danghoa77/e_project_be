@@ -1,31 +1,32 @@
+/* eslint-disable prettier/prettier */
 // user-service/src/users/dto/get-user.dto.ts
 import { Exclude, Expose } from 'class-transformer';
 
 export class GetUserDto {
-    // @Expose()
-    // _id: string;
+  // @Expose()
+  // _id: string;
 
-    @Expose()
-    email: string;
+  @Expose()
+  email: string;
 
-    @Expose()
-    name: string;
+  @Expose()
+  name: string;
 
-    @Expose()
-    phone: string;
+  @Expose()
+  phone: string;
 
-    @Expose()
-    role: string;
+  @Expose()
+  role: string;
 
-    @Expose()
-    addresses: any[];
+  @Expose()
+  addresses: any[];
 
-    @Expose()
-    createdAt: Date;
+  @Expose()
+  createdAt: Date;
 
-    @Expose()
-    updatedAt: Date;
+  @Expose()
+  updatedAt: Date;
 
-    @Exclude()
-    password: string;
+  @Exclude()
+  password: string;
 }

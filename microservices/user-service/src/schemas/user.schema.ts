@@ -1,3 +1,4 @@
+// user.schema.ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 
@@ -60,5 +61,5 @@ export class User {
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
-UserSchema.index({ email: 1 });
-UserSchema.index({ googleId: 1 }, { unique: true, sparse: true });
+// UserSchema.index({ email: 1 });
+// UserSchema.index({ googleId: 1 }, { unique: true, sparse: true });

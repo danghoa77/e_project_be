@@ -70,11 +70,24 @@ export class AuthService {
     }
 
 
-    async validateUser(_id: string, email: string, pass: string): Promise<UserDocument | null> {
+    // async validateUser(email: string, pass: string): Promise<any | null> {
+    //     const user = await this.usersService.findByEmail(email);
+    //     if (user && (await bcrypt.compare(pass, user.password))) {
+    //         const { password, ...userWithoutPassword } = user;
+    //         return userWithoutPassword;
+    //     }
+    //     return null;
+    // }
+
+    async validateUser(email: string, pass: string): Promise<any> {
         const user = await this.usersService.findByEmail(email);
+
         if (user && (await bcrypt.compare(pass, user.password))) {
-            return user as UserDocument;
+            const { password, ...result } = user.toObject();
+            return result;
         }
+
+
         return null;
     }
 
@@ -125,7 +138,7 @@ export class AuthService {
             this.logger.error(`Failed to send welcome email to ${newUser.email}`, error);
             throw new BadRequestException('Failed to send welcome email.');
         }
-        return this.login(newUser as UserDocument);
+        return this.login(newUser);
     }
 
     async logout(userId: string): Promise<void> {

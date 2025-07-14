@@ -1,3 +1,4 @@
+//` update-stock-item.dto.ts
 import { IsNotEmpty, IsString, IsInt, Min } from 'class-validator';
 
 export class UpdateStockItemDto {

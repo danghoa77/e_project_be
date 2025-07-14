@@ -10,7 +10,7 @@ export class UsersController {
     constructor(private usersService: UsersService) { }
 
     @UseGuards(JwtAuthGuard)
-    @UseInterceptors(ClassSerializerInterceptor)
+    // @UseInterceptors(ClassSerializerInterceptor)
     @Get('me')
     async getProfile(@Request() req: any): Promise<GetUserDto> {
         return this.usersService.findUserById(req.user.userId);

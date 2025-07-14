@@ -37,6 +37,17 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       );
     }
 
-    return { _id: payload.sub, email: payload.email, role: payload.role };
+
+    console.log('--- 1. JwtStrategy ---');
+    console.log('Payload được giải mã từ token:', payload);
+
+    const userObject = {
+      userId: payload.sub,
+      email: payload.email,
+      role: payload.role
+    };
+
+    console.log('Đối tượng trả về cho req.user:', userObject);
+    return userObject;
   }
 }
