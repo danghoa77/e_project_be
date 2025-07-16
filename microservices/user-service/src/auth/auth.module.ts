@@ -6,27 +6,39 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/users.module';
 import { LocalStrategy } from './strategies/local.strategy';
-import { RedisModule, JwtStrategy, MailerModule, GoogleAuthService, GoogleStrategy } from '@app/common-auth';
+import {
+  RedisModule,
+  JwtStrategy,
+  MailerModule,
+  GoogleAuthService,
+  GoogleStrategy,
+} from '@app/common-auth';
 
 @Module({
-    imports: [
-        UsersModule,
-        PassportModule,
-        RedisModule,
-        MailerModule,
-        ConfigModule,
-        JwtModule.registerAsync({
-            imports: [ConfigModule],
-            inject: [ConfigService],
-            useFactory: async (configService: ConfigService) => ({
-                secret: configService.get<string>('JWT_SECRET'),
-                signOptions: {
-                    expiresIn: configService.get<string>('JWT_EXPIRATION_TIME') || '1h',
-                },
-            }),
-        }),
-    ],
-    controllers: [AuthController],
-    providers: [AuthService, LocalStrategy, JwtStrategy, GoogleStrategy, GoogleAuthService,],
+  imports: [
+    UsersModule,
+    PassportModule,
+    RedisModule,
+    MailerModule,
+    ConfigModule,
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET'),
+        signOptions: {
+          expiresIn: configService.get<string>('JWT_EXPIRATION_TIME') || '1h',
+        },
+      }),
+    }),
+  ],
+  controllers: [AuthController],
+  providers: [
+    AuthService,
+    LocalStrategy,
+    JwtStrategy,
+    GoogleStrategy,
+    GoogleAuthService,
+  ],
 })
-export class AuthModule { }
+export class AuthModule {}

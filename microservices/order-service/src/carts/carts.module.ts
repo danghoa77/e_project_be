@@ -8,14 +8,14 @@ import { HttpModule } from '@nestjs/axios';
 import { RedisModule } from '@app/common-auth';
 import { CommonAuthModule } from '@app/common-auth';
 @Module({
-    imports: [
-        MongooseModule.forFeature([{ name: Cart.name, schema: CartSchema }]),
-        HttpModule,
-        RedisModule,
-        CommonAuthModule,
-    ],
-    controllers: [CartsController],
-    providers: [CartsService],
-    exports: [CartsService],
+  imports: [
+    MongooseModule.forFeature([{ name: Cart.name, schema: CartSchema }]),
+    HttpModule,
+    RedisModule,
+    CommonAuthModule,
+  ],
+  controllers: [CartsController],
+  providers: [CartsService],
+  exports: [CartsService],
 })
-export class CartsModule { }
+export class CartsModule {}

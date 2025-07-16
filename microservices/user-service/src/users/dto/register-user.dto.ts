@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 // user-service/src/auth/dto/register-user.dto.ts
 import {
   IsEmail,

@@ -1,5 +1,5 @@
 // order-service/src/orders/schemas/cart.schema.ts
-import { Prop, Schema, SchemaFactory, } from '@nestjs/mongoose';
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types, HydratedDocument } from 'mongoose';
 
 @Schema({ _id: false })
@@ -12,6 +12,9 @@ export class CartItem {
 
     @Prop({ type: Number, required: true, min: 1 })
     quantity: number;
+
+    @Prop({ type: Number, required: true, min: 0 })
+    price: number;
 }
 
 const CartItemSchema = SchemaFactory.createForClass(CartItem);

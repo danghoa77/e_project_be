@@ -1,6 +1,5 @@
-/* eslint-disable prettier/prettier */
 // user-service/src/auth/dto/login-user.dto.ts
-import { IsEmail, IsMongoId, IsNotEmpty } from 'class-validator';
+import { IsEmail, IsNotEmpty } from 'class-validator';
 
 export class LoginUserDto {
   _id?: string;

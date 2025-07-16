@@ -9,15 +9,15 @@ import { RedisModule } from '@app/common-auth';
 import { CartsModule } from '../carts/carts.module';
 import { CommonAuthModule } from '@app/common-auth';
 @Module({
-    imports: [
-        MongooseModule.forFeature([{ name: Order.name, schema: OrderSchema }]),
-        HttpModule,
-        RedisModule,
-        CartsModule,
-        CommonAuthModule,
-    ],
-    controllers: [OrdersController],
-    providers: [OrdersService],
-    exports: [OrdersService],
+  imports: [
+    MongooseModule.forFeature([{ name: Order.name, schema: OrderSchema }]),
+    HttpModule,
+    RedisModule,
+    CartsModule,
+    CommonAuthModule,
+  ],
+  controllers: [OrdersController],
+  providers: [OrdersService],
+  exports: [OrdersService],
 })
-export class OrdersModule { }
+export class OrdersModule {}
