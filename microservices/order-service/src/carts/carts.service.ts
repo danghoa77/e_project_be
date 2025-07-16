@@ -65,6 +65,7 @@ export class CartsService {
       const productData = response.data;
 
       if (!productData || !productData.variants) {
+        this.logger.error(`Product data is invalid for ID ${productId}.`);
         throw new NotFoundException(
           `Product data is invalid for ID ${productId}.`,
         );
@@ -74,10 +75,21 @@ export class CartsService {
         (v) => v._id.toString() === variantId,
       );
       if (!variant) {
+        this.logger.error(`Product variant with ID ${variantId} does not exist.`);
         throw new BadRequestException(
           `Product variant with ID ${variantId} does not exist.`,
         );
       }
+
+      // Validate price field
+      if (variant.price === undefined || variant.price === null || variant.price < 0) {
+        this.logger.error(`Invalid price for variant ${variantId}: ${variant.price}`);
+        throw new BadRequestException(
+          `Invalid price for variant ${variantId}.`,
+        );
+      }
+
+      this.logger.log(`Successfully fetched variant ${variantId} with price: ${variant.price}, salePrice: ${variant.salePrice}`);
       return variant;
     } catch (error) {
       this.logger.error(
@@ -90,17 +102,45 @@ export class CartsService {
     }
   }
 
+  private async _validateCartData(cart: CartDocument): Promise<void> {
+    for (const item of cart.items) {
+      if (!item.price || item.price < 0) {
+        this.logger.error(`Invalid price in cart item: ${JSON.stringify(item)}`);
+        throw new BadRequestException(`Invalid price in cart item for product ${item.productId}`);
+      }
+      if (!item.quantity || item.quantity < 1) {
+        this.logger.error(`Invalid quantity in cart item: ${JSON.stringify(item)}`);
+        throw new BadRequestException(`Invalid quantity in cart item for product ${item.productId}`);
+      }
+    }
+  }
+
   async getCartByUserId(userId: string): Promise<Cart> {
     const cacheKey = `cart:${userId}`;
     const cachedCart = await this.redisService.get(cacheKey);
 
     if (cachedCart) {
       this.logger.log(`Cart for user ${userId} found in Redis cache.`);
-      return JSON.parse(cachedCart) as Cart;
+      const cart = JSON.parse(cachedCart) as Cart;
+      // Validate cached cart data
+      if (cart.items) {
+        for (const item of cart.items) {
+          if (!item.price || item.price < 0) {
+            this.logger.warn(`Invalid price in cached cart item, refreshing from DB`);
+            // If cached data is invalid, fetch from DB
+            const freshCart = await this._getFreshCartByUserId(userId);
+            await freshCart.save();
+            await this.redisService.set(cacheKey, JSON.stringify(freshCart.toObject()), 3600);
+            return freshCart.toObject();
+          }
+        }
+      }
+      return cart;
     }
 
     this.logger.log(`Cart for user ${userId} not in cache. Finding in DB...`);
     const cart = await this._getFreshCartByUserId(userId);
+    await this._validateCartData(cart);
     await cart.save();
 
     this.logger.log(`Caching cart for user ${userId}.`);
@@ -119,6 +159,9 @@ export class CartsService {
     const { productId, variantId, quantity } = addItemDto;
 
     const variant = await this._getProductVariant(productId, variantId);
+    
+    // Add logging to debug price issue
+    this.logger.log(`Fetched variant price: ${variant.price} for product ${productId}, variant ${variantId}`);
 
     if (variant.stock < quantity) {
       throw new BadRequestException(
@@ -132,6 +175,9 @@ export class CartsService {
         item.productId.toString() === productId && item.variantId === variantId,
     );
 
+    // Use salePrice if available, otherwise use regular price
+    const itemPrice = variant.salePrice && variant.salePrice > 0 ? variant.salePrice : variant.price;
+    
     if (existingItemIndex > -1) {
       const newQuantity = cart.items[existingItemIndex].quantity + quantity;
       if (newQuantity > variant.stock) {
@@ -140,17 +186,23 @@ export class CartsService {
         );
       }
       cart.items[existingItemIndex].quantity = newQuantity;
-      cart.items[existingItemIndex].price = variant.price;
+      cart.items[existingItemIndex].price = itemPrice;
+      this.logger.log(`Updated existing item price to: ${itemPrice}`);
     } else {
       cart.items.push({
         productId: new Types.ObjectId(productId),
         variantId,
         quantity,
-        price: variant.price,
+        price: itemPrice,
       });
+      this.logger.log(`Added new item with price: ${itemPrice}`);
     }
 
     await this.redisService.del(`cart:${userId}`);
+    
+    // Validate cart data before saving
+    await this._validateCartData(cart);
+    
     return cart.save();
   }
 
@@ -209,18 +261,32 @@ export class CartsService {
     }
 
     const variant = await this._getProductVariant(productId, variantId);
+    
+    // Add logging to debug price issue
+    this.logger.log(`Fetched variant price: ${variant.price} for product ${productId}, variant ${variantId}`);
+    
     if (variant.stock < quantity) {
       throw new BadRequestException(
         `Insufficient stock. Only ${variant.stock} left.`,
       );
     }
 
+    // Use salePrice if available, otherwise use regular price
+    const itemPrice = variant.salePrice && variant.salePrice > 0 ? variant.salePrice : variant.price;
+
     cart.items[itemIndex].quantity = quantity;
-    cart.items[itemIndex].price = variant.price;
+    cart.items[itemIndex].price = itemPrice;
+    
+    this.logger.log(`Updated item price to: ${itemPrice} for quantity update`);
+    
     await this.redisService.del(`cart:${userId}`);
     this.logger.log(
       `Item quantity updated for productId ${productId} and variantId ${variantId} in cart for user ${userId}.`,
     );
+    
+    // Validate cart data before saving
+    await this._validateCartData(cart);
+    
     return cart.save();
   }
 
