@@ -182,7 +182,7 @@ export class CartsService {
                     },
                 },
             },
-            { new: true } // Trả lại document mới
+            { new: true }
         );
 
         await this.redisService.del(`cart:${userId}`);
