@@ -81,6 +81,10 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^@app/common-auth/(.*)$": "<rootDir>/../../../libs/common-auth/src/$1",
+      "^@app/common-auth$": "<rootDir>/../../../libs/common-auth/src"
+    }
   }
 }
