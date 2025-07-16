@@ -14,8 +14,8 @@ export class AddToCartDto {
   @Min(1, { message: 'Quantity must be at least 1.' })
   quantity: number;
 
-  @IsOptional()
-  @IsNumber({}, { message: 'Price must be a number.' })
-  @Min(0, { message: 'Price cannot be negative.' })
-  price?: number;
+  // @IsOptional()
+  // @IsNumber({}, { message: 'Price must be a number.' })
+  // @Min(0, { message: 'Price cannot be negative.' })
+  // price?: number;
 }
