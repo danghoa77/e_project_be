@@ -66,6 +66,7 @@ describe('CartsController', () => {
         productId: 'product-abc',
         variantId: 'variant-xyz',
         quantity: 2,
+        price: 50.0,
       };
       const mockUpdatedCart = { userId: mockUserId, items: [mockAddItemDto] };
       mockCartsService.addItemToCart.mockResolvedValue(mockUpdatedCart);
