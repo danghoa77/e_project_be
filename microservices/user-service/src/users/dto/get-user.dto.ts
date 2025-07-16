@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 // user-service/src/users/dto/get-user.dto.ts
 import { Exclude, Expose } from 'class-transformer';
 

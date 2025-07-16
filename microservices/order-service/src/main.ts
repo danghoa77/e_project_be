@@ -13,11 +13,13 @@ async function bootstrap() {
     allowedHeaders: 'Content-Type, Accept, Authorization, X-CSRF-Token',
   });
 
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    transform: true,
-  }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
 
   const port = process.env.PORT || 3000;
   await app.listen(port);

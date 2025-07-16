@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 // user-service/src/users/dto/update-user.dto.ts
 import {
   IsString,

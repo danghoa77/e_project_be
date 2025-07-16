@@ -7,12 +7,12 @@ import { User, UserSchema } from '../schemas/user.schema';
 import { RedisModule } from '@app/common-auth';
 
 @Module({
-    imports: [
-        MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
-        RedisModule,
-    ],
-    controllers: [UsersController],
-    providers: [UsersService],
-    exports: [UsersService],
+  imports: [
+    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    RedisModule,
+  ],
+  controllers: [UsersController],
+  providers: [UsersService],
+  exports: [UsersService],
 })
-export class UsersModule { }
+export class UsersModule {}

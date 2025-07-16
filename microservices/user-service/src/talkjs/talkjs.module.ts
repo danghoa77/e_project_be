@@ -4,10 +4,8 @@ import { TalkjsController } from './talkjs.controller';
 import { TalkjsModule as CommonTalkjsModule } from '@app/common-auth';
 
 @Module({
-    imports: [
-        CommonTalkjsModule,
-    ],
-    controllers: [TalkjsController],
-    providers: [],
+  imports: [CommonTalkjsModule],
+  controllers: [TalkjsController],
+  providers: [],
 })
-export class TalkjsLocalModule { } 
+export class TalkjsLocalModule {}

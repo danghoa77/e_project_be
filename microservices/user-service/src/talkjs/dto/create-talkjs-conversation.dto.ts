@@ -2,11 +2,11 @@
 import { IsOptional, IsString } from 'class-validator';
 
 export class CreateTalkjsConversationDto {
-    @IsString()
-    @IsOptional()
-    targetCustomerId?: string;
+  @IsString()
+  @IsOptional()
+  targetCustomerId?: string;
 
-    @IsString()
-    @IsOptional()
-    targetAdminId?: string;
+  @IsString()
+  @IsOptional()
+  targetAdminId?: string;
 }

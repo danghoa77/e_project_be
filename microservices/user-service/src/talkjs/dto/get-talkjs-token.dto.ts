@@ -1,2 +1,2 @@
 // get-talkjs-token.dto.ts
-export class GetTalkjsTokenDto { }
+export class GetTalkjsTokenDto {}
