@@ -3,8 +3,6 @@ import { CartsController, AuthenticatedRequest } from './carts.controller';
 import { CartsService } from './carts.service';
 import { AddToCartDto } from './dto/add-to-cart.dto';
 
-
-
 const mockCartsService = {
   getCartByUserId: jest.fn(),
   addItemToCart: jest.fn(),
@@ -28,7 +26,6 @@ describe('CartsController', () => {
     }).compile();
 
     controller = module.get<CartsController>(CartsController);
-    service = module.get<CartsService>(CartsService);
   });
 
   it('should be defined', () => {
