@@ -92,13 +92,11 @@ describe('OrdersController', () => {
             productId: 'product-abc',
             variantId: 'variant-xyz-1',
             quantity: 1,
-            price: 50.0,
           },
           {
             productId: 'product-def',
             variantId: 'variant-xyz-2',
             quantity: 2,
-            price: 50.0,
           },
         ],
       };
