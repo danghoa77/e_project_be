@@ -59,7 +59,7 @@ export class AuthService {
       if (!user.photoUrl || user.photoUrl !== picture) {
         user.photoUrl = picture;
       }
-      if (!user.isModified()) {
+      if (user.isModified()) {
         await user.save();
       }
     }

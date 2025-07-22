@@ -9,7 +9,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  BadRequestException,
+  BadRequestException, Logger
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterUserDto } from '../users/dto/register-user.dto';
@@ -45,16 +45,20 @@ interface GoogleAuthResult {
   accessTokenGG: string;
 }
 
+
 @Controller('auth')
 export class AuthController {
   constructor(
     private authService: AuthService,
     private configService: ConfigService,
-  ) {}
+    private logger: Logger
+  ) {
+
+  }
 
   @Get('google')
   @UseGuards(AuthGuard('google'))
-  async googleAuth() {}
+  async googleAuth() { }
 
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
@@ -62,31 +66,75 @@ export class AuthController {
     const googleUser = req.user as GoogleUser;
 
     try {
-      const result: GoogleAuthResult =
-        await this.authService.validateGoogleUser(
-          googleUser.googleId,
-          googleUser.email,
-          googleUser.firstName,
-          googleUser.lastName,
-          googleUser.picture,
-        );
+      const result: GoogleAuthResult = await this.authService.validateGoogleUser(
+        googleUser.googleId,
+        googleUser.email,
+        googleUser.firstName,
+        googleUser.lastName,
+        googleUser.picture,
+      );
 
-      const mobileScheme =
-        this.configService.get<string>('MOBILE_APP_SCHEME') || 'my-e-project';
+      // Thay vì deep link app, chuyển hướng đến trang web
+      const frontendBaseUrl = this.configService.get<string>('FRONTEND_URL') || this.configService.get<string>('MOBILE_URL');
 
       if (result && result.accessTokenGG) {
-        const deepLinkWithToken = `${mobileScheme}://auth/success?token=${result.accessTokenGG}`;
-        res.status(302).setHeader('Location', deepLinkWithToken);
-        res.end();
+        const redirectUrl = `${frontendBaseUrl}/auth/success?token=${result.accessTokenGG}`;
+        this.logger.log("Redirecting to:", redirectUrl);
+        res.setHeader('Content-Type', 'text/html');
+        res.send(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8" />
+            <title>Redirecting...</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          </head>
+          <body>
+            <p>Đang chuyển hướng đến ứng dụng web...</p>
+            <script>
+              window.location.replace('${redirectUrl}');
+            </script>
+          </body>
+        </html>
+      `);
       } else {
-        res.redirect(`${mobileScheme}://auth/failure`);
+        const fallback = `${frontendBaseUrl}/auth/failure`;
+        res.setHeader('Content-Type', 'text/html');
+        res.send(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8" />
+            <title>Đăng nhập thất bại</title>
+          </head>
+          <body>
+            <p>Không thể xác thực tài khoản Google.</p>
+            <script>
+              window.location.replace('${fallback}');
+            </script>
+          </body>
+        </html>
+      `);
       }
     } catch (error) {
       console.error('Google auth error:', error);
-      const mobileScheme =
-        this.configService.get<string>('MOBILE_APP_SCHEME') ||
-        'e_project_mobile';
-      res.redirect(`${mobileScheme}://auth/failure`);
+      const fallback = `${this.configService.get<string>('FRONTEND_URL') || this.configService.get<string>('MOBILE_URL')}/auth/failure`;
+      res.setHeader('Content-Type', 'text/html');
+      res.send(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>Đăng nhập thất bại</title>
+        </head>
+        <body>
+          <p>Đã xảy ra lỗi khi xác thực tài khoản.</p>
+          <script>
+            window.location.replace('${fallback}');
+          </script>
+        </body>
+      </html>
+    `);
     }
   }
 

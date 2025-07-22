@@ -1,11 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CartsController } from './carts.controller';
+import { CartsController, AuthenticatedRequest } from './carts.controller';
 import { CartsService } from './carts.service';
 import { AddToCartDto } from './dto/add-to-cart.dto';
 
-interface AuthenticatedRequest {
-  user: { userId: string; role: 'customer' | 'admin' };
-}
+
 
 const mockCartsService = {
   getCartByUserId: jest.fn(),
@@ -17,7 +15,6 @@ const mockCartsService = {
 
 describe('CartsController', () => {
   let controller: CartsController;
-  let service: CartsService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -48,7 +45,7 @@ describe('CartsController', () => {
       mockCartsService.getCartByUserId.mockResolvedValue(mockCart);
 
       // Act
-      const result = await controller.getCart(mockReq as any);
+      const result = await controller.getCart(mockReq as AuthenticatedRequest);
 
       // Assert
       expect(mockCartsService.getCartByUserId).toHaveBeenCalledWith(mockUserId);
@@ -72,7 +69,7 @@ describe('CartsController', () => {
       mockCartsService.addItemToCart.mockResolvedValue(mockUpdatedCart);
 
       // Act
-      const result = await controller.addItem(mockReq as any, mockAddItemDto);
+      const result = await controller.addItem(mockReq as AuthenticatedRequest, mockAddItemDto);
 
       // Assert
       expect(mockCartsService.addItemToCart).toHaveBeenCalledWith(
@@ -93,7 +90,7 @@ describe('CartsController', () => {
       mockCartsService.removeItemFromCart.mockResolvedValue(mockUpdatedCart);
 
       const result = await controller.removeItem(
-        mockReq as any,
+        mockReq as AuthenticatedRequest,
         mockProductId,
         mockVariantId,
       );
@@ -127,7 +124,7 @@ describe('CartsController', () => {
       mockCartsService.updateItemQuantity.mockResolvedValue(mockUpdatedCart);
 
       const result = await controller.updateQuantity(
-        mockReq as any,
+        mockReq as AuthenticatedRequest,
         mockProductId,
         mockVariantId,
         mockQuantity,
@@ -151,7 +148,7 @@ describe('CartsController', () => {
       mockCartsService.removeItemFromCart.mockResolvedValue({});
 
       await controller.updateQuantity(
-        mockReq as any,
+        mockReq as AuthenticatedRequest,
         mockProductId,
         mockVariantId,
         mockQuantity,
@@ -171,7 +168,7 @@ describe('CartsController', () => {
       const mockReq = { user: { userId: mockUserId } };
       mockCartsService.clearCart.mockResolvedValue(undefined);
 
-      const result = await controller.clearCart(mockReq as any);
+      const result = await controller.clearCart(mockReq as AuthenticatedRequest);
 
       expect(mockCartsService.clearCart).toHaveBeenCalledWith(mockUserId);
       expect(result).toEqual({ message: 'Cart has been cleared.' });

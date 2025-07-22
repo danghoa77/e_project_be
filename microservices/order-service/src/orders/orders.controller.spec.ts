@@ -148,7 +148,10 @@ describe('OrdersController', () => {
       };
       (ordersService.findOrderById as jest.Mock).mockResolvedValue(mockOrder);
 
-      const result = await controller.getOrderById(mockReq as any, 'some-order-id');
+      const result = await controller.getOrderById(
+        mockReq as any,
+        'some-order-id',
+      );
 
       expect(ordersService.findOrderById).toHaveBeenCalledWith('some-order-id');
       expect(result).toEqual(mockOrder);
@@ -164,7 +167,10 @@ describe('OrdersController', () => {
       };
       (ordersService.findOrderById as jest.Mock).mockResolvedValue(mockOrder);
 
-      const result = await controller.getOrderById(mockReq as any, 'my-order-id');
+      const result = await controller.getOrderById(
+        mockReq as any,
+        'my-order-id',
+      );
 
       expect(ordersService.findOrderById).toHaveBeenCalledWith('my-order-id');
       expect(result).toEqual(mockOrder);

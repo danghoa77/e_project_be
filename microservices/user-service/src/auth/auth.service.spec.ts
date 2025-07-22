@@ -9,6 +9,7 @@ import { UserDocument } from '../schemas/user.schema';
 
 const mockUsersService = {
   findByEmail: jest.fn(),
+  createUser: jest.fn(),
 };
 const mockJwtService = {
   sign: jest.fn(),
@@ -24,12 +25,13 @@ const mockMailerService = {
   sendMail: jest.fn(),
 };
 const mockTalkJsService = {
-  sendMail: jest.fn(),
+  upsertUser: jest.fn(),
 };
 
 // Mock bcrypt
 jest.mock('bcryptjs', () => ({
   compare: jest.fn(),
+  hash: jest.fn(), // Add hash to mock bcrypt
 }));
 
 describe('AuthService', () => {
@@ -146,6 +148,163 @@ describe('AuthService', () => {
         role: 'customer',
       });
       expect(mockRedisService.set).toHaveBeenCalled();
+    });
+  });
+
+  describe('validateGoogleUser', () => {
+    const googleId = 'google123';
+    const email = 'google@example.com';
+    const firstName = 'Google';
+    const lastName = 'User';
+    const picture = 'http://example.com/pic.jpg';
+    const accessTokenGG = 'mockGoogleAccessToken';
+
+    it('should create a new user if not found', async () => {
+      mockUsersService.findByEmail.mockResolvedValue(null);
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashedTempPassword');
+      const newUser = {
+        _id: 'newUserId',
+        email,
+        name: `${firstName} ${lastName}`,
+        role: 'customer',
+        googleId,
+        photoUrl: picture,
+        toObject: jest.fn().mockReturnValue({
+          _id: 'newUserId',
+          email,
+          name: `${firstName} ${lastName}`,
+          role: 'customer',
+          googleId,
+          photoUrl: picture,
+        }),
+      } as unknown as UserDocument;
+      mockUsersService.createUser.mockResolvedValue(newUser);
+      mockJwtService.sign.mockReturnValue(accessTokenGG);
+      mockRedisService.set.mockResolvedValue('OK');
+
+      const result = await service.validateGoogleUser(
+        googleId,
+        email,
+        firstName,
+        lastName,
+        picture,
+      );
+
+      expect(mockUsersService.findByEmail).toHaveBeenCalledWith(email);
+      expect(bcrypt.hash).toHaveBeenCalled();
+      expect(mockUsersService.createUser).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email,
+          name: `${firstName} ${lastName}`,
+          googleId,
+          photoUrl: picture,
+        }),
+      );
+      expect(mockJwtService.sign).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'newUserId',
+          email,
+          role: 'customer',
+        }),
+      );
+      expect(mockRedisService.set).toHaveBeenCalled();
+      expect(result).toEqual({ user: newUser, accessTokenGG });
+    });
+
+    it('should update existing user if found and googleId/photoUrl differ', async () => {
+      const existingUser = {
+        _id: 'existingUserId',
+        email,
+        name: 'Existing User',
+        role: 'customer',
+        googleId: 'oldGoogleId',
+        photoUrl: 'oldPhotoUrl',
+        isModified: jest.fn().mockReturnValue(true),
+        save: jest.fn().mockResolvedValue(undefined),
+        toObject: jest.fn().mockReturnValue({
+          _id: 'existingUserId',
+          email,
+          name: 'Existing User',
+          role: 'customer',
+          googleId,
+          photoUrl: picture,
+        }),
+      } as unknown as UserDocument;
+      mockUsersService.findByEmail.mockResolvedValue(existingUser);
+      mockJwtService.sign.mockReturnValue(accessTokenGG);
+      mockRedisService.set.mockResolvedValue('OK');
+
+      const result = await service.validateGoogleUser(
+        googleId,
+        email,
+        firstName,
+        lastName,
+        picture,
+      );
+
+      expect(mockUsersService.findByEmail).toHaveBeenCalledWith(email);
+      expect(existingUser.googleId).toBe(googleId);
+      expect(existingUser.photoUrl).toBe(picture);
+      expect(existingUser.isModified).toHaveBeenCalled();
+      expect(existingUser.save).toHaveBeenCalled();
+      expect(mockUsersService.createUser).not.toHaveBeenCalled(); // Should not create new user
+      expect(mockJwtService.sign).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'existingUserId',
+          email,
+          role: 'customer',
+        }),
+      );
+      expect(mockRedisService.set).toHaveBeenCalled();
+      expect(result).toEqual({ user: existingUser, accessTokenGG });
+    });
+
+    it('should not update existing user if found and googleId/photoUrl are same', async () => {
+      const existingUser = {
+        _id: 'existingUserId',
+        email,
+        name: 'Existing User',
+        role: 'customer',
+        googleId,
+        photoUrl: picture,
+        isModified: jest.fn().mockReturnValue(false), // No modification
+        save: jest.fn().mockResolvedValue(undefined),
+        toObject: jest.fn().mockReturnValue({
+          _id: 'existingUserId',
+          email,
+          name: 'Existing User',
+          role: 'customer',
+          googleId,
+          photoUrl: picture,
+        }),
+      } as unknown as UserDocument;
+      mockUsersService.findByEmail.mockResolvedValue(existingUser);
+      mockJwtService.sign.mockReturnValue(accessTokenGG);
+      mockRedisService.set.mockResolvedValue('OK');
+
+      const result = await service.validateGoogleUser(
+        googleId,
+        email,
+        firstName,
+        lastName,
+        picture,
+      );
+
+      expect(mockUsersService.findByEmail).toHaveBeenCalledWith(email);
+      expect(existingUser.googleId).toBe(googleId);
+      expect(existingUser.photoUrl).toBe(picture);
+      expect(existingUser.isModified).toHaveBeenCalled();
+      expect(existingUser.save).not.toHaveBeenCalled(); // Should not save
+      expect(mockUsersService.createUser).not.toHaveBeenCalled();
+      expect(mockJwtService.sign).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'existingUserId',
+          email,
+          role: 'customer',
+        }),
+      );
+      expect(mockRedisService.set).toHaveBeenCalled();
+      expect(result).toEqual({ user: existingUser, accessTokenGG });
     });
   });
 });
