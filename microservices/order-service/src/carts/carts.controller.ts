@@ -14,7 +14,7 @@ import { AddToCartDto } from './dto/add-to-cart.dto';
 import { JwtAuthGuard } from '@app/common-auth';
 import { Request } from 'express';
 
-interface AuthenticatedRequest extends Request {
+export interface AuthenticatedRequest extends Request {
   user: {
     userId: string;
   };

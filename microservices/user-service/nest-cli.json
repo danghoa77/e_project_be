@@ -21,5 +21,11 @@
       "**/*.proto"
     ],
     "watchAssets": true
+  },
+  "watchOptions": {
+    "ignore": [
+      "node_modules/**",
+      ".git/**"
+    ]
   }
 }

@@ -1,0 +1,3 @@
+The NestJS application was encountering an `ENOMEM` error, indicating that it was running out of memory. This issue was caused by the development server's file watcher trying to monitor too many files, including the `node_modules` and `.git` directories.
+
+To resolve this, I updated the `nest-cli.json` file in each microservice (`order-service`, `payment-service`, `product-service`, and `user-service`) to explicitly ignore these directories. By adding a `watchOptions` configuration, I instructed the file watcher to skip unnecessary files, which significantly reduced memory consumption and resolved the error.

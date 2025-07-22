@@ -1,5 +1,10 @@
 // order-service/src/carts/dto/add-to-cart.dto.ts
-import { IsNotEmpty, IsString, IsNumber, Min, IsOptional } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsNumber,
+  Min,
+} from 'class-validator';
 
 export class AddToCartDto {
   @IsNotEmpty({ message: 'Product ID must not be empty.' })
@@ -13,9 +18,4 @@ export class AddToCartDto {
   @IsNumber({}, { message: 'Quantity must be a number.' })
   @Min(1, { message: 'Quantity must be at least 1.' })
   quantity: number;
-
-  @IsOptional()
-  @IsNumber({}, { message: 'Price must be a number.' })
-  @Min(0, { message: 'Price cannot be negative.' })
-  price?: number;
 }
