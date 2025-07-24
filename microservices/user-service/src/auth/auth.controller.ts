@@ -74,7 +74,6 @@ export class AuthController {
         googleUser.picture,
       );
 
-      // Thay vì deep link app, chuyển hướng đến trang web
       const frontendBaseUrl = this.configService.get<string>('FRONTEND_URL') || this.configService.get<string>('MOBILE_URL');
 
       if (result && result.accessTokenGG) {
