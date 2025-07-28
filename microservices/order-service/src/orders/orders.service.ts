@@ -4,6 +4,7 @@ import {
   BadRequestException,
   OnModuleInit,
   Logger,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectModel, InjectConnection } from '@nestjs/mongoose';
 import { Model, Connection, Types } from 'mongoose';
@@ -39,7 +40,7 @@ export class OrdersService implements OnModuleInit {
     private readonly httpService: HttpService,
     private readonly redisService: RedisService,
     @InjectConnection() private readonly connection: Connection,
-  ) {}
+  ) { }
 
   async onModuleInit() {
     // this.setupRedisStreamConsumer().catch(err => this.logger.error('Failed to setup Redis Stream Consumer', err));
@@ -66,7 +67,6 @@ export class OrdersService implements OnModuleInit {
       const orderItems: OrderItem[] = [];
       let totalPrice = 0;
 
-      //check stock and calculate total price
       for (const cartItem of cart.items) {
         const productUrl = `http://product-service:3000/products/${cartItem.productId.toString()}`;
         const response = await firstValueFrom(
@@ -212,4 +212,93 @@ export class OrdersService implements OnModuleInit {
 
     return updatedOrder;
   }
+
+  private async _increaseProductStock(items: OrderItem[]): Promise<void> {
+    this.logger.log(
+      `Preparing to call ProductService to restore stock for ${items.length} items...`,
+    );
+
+    const stockUpdatePayload = {
+      items: items.map((item) => ({
+        productId: item.productId.toString(),
+        variantId: item.variantId,
+        quantity: item.quantity,
+      })),
+    };
+
+    const updateStockUrl = 'http://product-service:3000/products/stock/increase';
+
+    try {
+      await firstValueFrom(
+        this.httpService.patch(updateStockUrl, stockUpdatePayload),
+      );
+      this.logger.log('Successfully called the endpoint to increase product stock.');
+    } catch (error) {
+      this.logger.error(
+        'Failed to increase product stock in Product Service.',
+        error.response?.data || error.message,
+      );
+      throw new Error('Failed to revert product stock.');
+    }
+  }
+
+
+  async cancelOrder(
+    orderId: string,
+    userId: string,
+    userRole: string,
+  ): Promise<OrderDocument> {
+    const session = await this.connection.startSession();
+    session.startTransaction();
+    this.logger.log(
+      `Starting transaction to cancel order ${orderId} for user ${userId}`,
+    );
+
+    try {
+      const order = await this.orderModel.findById(orderId).session(session);
+
+      if (!order) {
+        throw new NotFoundException(`Order with ID ${orderId} not found.`);
+      }
+
+      if (userRole !== 'admin' && order.userId.toHexString() !== userId) {
+        throw new ForbiddenException('You do not have permission to perform this action.');
+      }
+      if (!['pending', 'confirmed'].includes(order.status)) {
+        throw new BadRequestException(
+          `Cannot cancel an order with status "${order.status}".`,
+        );
+      }
+
+      // Restore product stock
+      await this._increaseProductStock(order.items);
+      this.logger.log(`Restored product stock for order ${orderId}.`);
+
+      //Update order status to 'cancelled'
+      order.status = 'cancelled';
+      const updatedOrder = await order.save({ session });
+      this.logger.log(`Order ${orderId} status updated to 'cancelled'.`);
+
+      //  Commit transaction
+      await session.commitTransaction();
+      this.logger.log(`Transaction for cancelling order ${orderId} completed successfully.`);
+
+      //Clear related cache
+      await this.redisService.del(`order:${orderId}`);
+      await this.redisService.del(`orders:user:${order.userId.toString()}`);
+      await this.redisService.del('orders:all');
+
+      return updatedOrder;
+    } catch (error) {
+      await session.abortTransaction();
+      this.logger.error(
+        `Failed to cancel order ${orderId}. Transaction has been rolled back.`,
+        error instanceof Error ? error.stack : error,
+      );
+      throw error;
+    } finally {
+      session.endSession();
+    }
+  }
+
 }

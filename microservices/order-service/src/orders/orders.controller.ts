@@ -8,6 +8,7 @@ import {
   Param,
   Put,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -25,7 +26,7 @@ interface AuthenticatedRequest extends Request {
 @UseGuards(JwtAuthGuard)
 @Controller('orders')
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(private readonly ordersService: OrdersService) { }
 
   // @Role('customer')
   @Post()
@@ -62,6 +63,15 @@ export class OrdersController {
     return order;
   }
 
+  @Put(':id/cancel')
+  async cancelOrder(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+  ) {
+    return this.ordersService.cancelOrder(id, req.user.userId, req.user.role);
+  }
+
+  // @Role('admin')
   @Put(':id/status')
   async updateOrderStatus(
     @Param('id') id: string,
@@ -79,10 +89,13 @@ export class OrdersController {
     return this.ordersService.updateOrderStatus(
       id,
       updateStatusDto.status as
-        | 'confirmed'
-        | 'shipped'
-        | 'delivered'
-        | 'cancelled',
+      | 'confirmed'
+      | 'shipped'
+      | 'delivered'
+      | 'cancelled',
     );
   }
+
+
+
 }
