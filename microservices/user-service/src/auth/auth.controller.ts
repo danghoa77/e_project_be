@@ -1,4 +1,5 @@
-// user-service/src/auth/auth.controller.ts
+// src/auth/auth.controller.ts
+
 import {
   Controller,
   Post,
@@ -9,7 +10,8 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  BadRequestException, Logger
+  BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterUserDto } from '../users/dto/register-user.dto';
@@ -19,121 +21,55 @@ import { AuthGuard } from '@nestjs/passport';
 import { Request, Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { UserDocument } from '../schemas/user.schema';
-
-interface AuthenticatedUser {
-  userId?: string;
-  email?: string;
-  role?: 'customer' | 'admin';
-  googleId?: string;
-  firstName?: string;
-  lastName?: string;
-  picture?: string;
-  accessToken?: string;
-}
-
-interface GoogleUser {
-  email: string;
-  firstName: string;
-  lastName: string;
-  picture: string;
-  accessToken: string;
-  googleId: string;
-}
-
-interface GoogleAuthResult {
-  user: UserDocument;
-  accessTokenGG: string;
-}
-
+import { GoogleAuthDto } from './dto/google-auth.dto';
+import { AuthenticatedUser, GooglePassportUser } from './dto/auth.types';
 
 @Controller('auth')
 export class AuthController {
   constructor(
-    private authService: AuthService,
-    private configService: ConfigService,
-    private logger: Logger
-  ) {
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+    private readonly logger: Logger,
+  ) { }
 
+  /**
+   * Endpoint cho Mobile hoặc bất kỳ client nào có idToken
+   */
+  @Post('google/token')
+  @HttpCode(HttpStatus.OK)
+  async googleLoginWithToken(@Body() googleAuthDto: GoogleAuthDto) {
+    const { accessToken } = await this.authService.loginWithGoogleToken(googleAuthDto.idToken);
+    return { access_token: accessToken };
   }
 
+  /**
+   * Endpoint bắt đầu luồng Oauth2 cho web
+   */
   @Get('google')
   @UseGuards(AuthGuard('google'))
-  async googleAuth() { }
+  async googleAuth() { /* Passport handles the redirect */ }
 
+  /**
+   * Endpoint callback sau khi user xác thực với Google
+   */
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
   async googleAuthRedirect(@Req() req: Request, @Res() res: Response) {
-    const googleUser = req.user as GoogleUser;
+    const googleUser = req.user as GooglePassportUser;
 
     try {
-      const result: GoogleAuthResult = await this.authService.validateGoogleUser(
-        googleUser.googleId,
-        googleUser.email,
-        googleUser.firstName,
-        googleUser.lastName,
-        googleUser.picture,
-      );
+      const { accessToken } = await this.authService.validateGooglePassportUser(googleUser);
 
-      const frontendBaseUrl = this.configService.get<string>('FRONTEND_URL') || this.configService.get<string>('MOBILE_URL');
+      const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+      const redirectUrl = `${frontendUrl}/auth/callback?token=${accessToken}`;
 
-      if (result && result.accessTokenGG) {
-        const redirectUrl = `${frontendBaseUrl}/auth/success?token=${result.accessTokenGG}`;
-        this.logger.log("Redirecting to:", redirectUrl);
-        res.setHeader('Content-Type', 'text/html');
-        res.send(`
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <meta charset="utf-8" />
-            <title>Redirecting...</title>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-          </head>
-          <body>
-            <p>Đang chuyển hướng đến ứng dụng web...</p>
-            <script>
-              window.location.replace('${redirectUrl}');
-            </script>
-          </body>
-        </html>
-      `);
-      } else {
-        const fallback = `${frontendBaseUrl}/auth/failure`;
-        res.setHeader('Content-Type', 'text/html');
-        res.send(`
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <meta charset="utf-8" />
-            <title>Đăng nhập thất bại</title>
-          </head>
-          <body>
-            <p>Không thể xác thực tài khoản Google.</p>
-            <script>
-              window.location.replace('${fallback}');
-            </script>
-          </body>
-        </html>
-      `);
-      }
+      this.logger.log(`Redirecting to: ${redirectUrl}`);
+      res.redirect(redirectUrl);
+
     } catch (error) {
-      console.error('Google auth error:', error);
-      const fallback = `${this.configService.get<string>('FRONTEND_URL') || this.configService.get<string>('MOBILE_URL')}/auth/failure`;
-      res.setHeader('Content-Type', 'text/html');
-      res.send(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8" />
-          <title>Đăng nhập thất bại</title>
-        </head>
-        <body>
-          <p>Đã xảy ra lỗi khi xác thực tài khoản.</p>
-          <script>
-            window.location.replace('${fallback}');
-          </script>
-        </body>
-      </html>
-    `);
+      this.logger.error('Google auth callback error:', error.stack);
+      const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+      res.redirect(`${frontendUrl}/login?error=auth_failed`);
     }
   }
 
@@ -154,12 +90,10 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async logout(@Req() req: Request) {
     const userId = (req.user as AuthenticatedUser).userId;
-
     if (!userId) {
       throw new BadRequestException('User ID not found in token for logout.');
     }
-
     await this.authService.logout(userId);
-    return { message: 'Logout Successful !.' };
+    return { message: 'Logout Successful!' };
   }
 }
