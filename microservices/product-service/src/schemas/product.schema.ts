@@ -50,7 +50,7 @@ export class Product extends Document {
     images: Image[];
 
     @Prop({ type: String, required: true, })
-    category: string;
+    category: string; //[]
 
     @Prop({ type: [VariantSchema], default: [] })
     variants: Variant[];

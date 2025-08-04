@@ -4,7 +4,7 @@ import { CreateProductDto, CreateVariantDto } from './create-product.dto';
 import { IsOptional, IsArray, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
-class UpdateVariantDto extends PartialType(CreateVariantDto) {}
+class UpdateVariantDto extends PartialType(CreateVariantDto) { }
 const ProductFieldsToUpdateDto = OmitType(CreateProductDto, [
   'variants',
 ] as const);

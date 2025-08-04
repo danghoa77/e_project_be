@@ -7,11 +7,20 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({
-    origin: 'http://localhost:3000', // Frontend URL
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    origin: ['http://localhost:5173',
+      'https://a3c630d951a9.ngrok-free.app',
+    ],
+    methods: ['GET', 'POST', 'PATCH', 'DELETE'],
     credentials: true,
-    allowedHeaders: 'Content-Type, Accept, Authorization, X-CSRF-Token',
+    allowedHeaders: [
+      'Content-Type',
+      'Accept',
+      'Authorization',
+      'X-CSRF-Token',
+      'ngrok-skip-browser-warning',
+    ],
   });
+
 
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
