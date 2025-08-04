@@ -25,15 +25,17 @@ import { BulkUpdateStockDto } from './dto/bulk-update-stock.dto';
 export class ProductsController {
     constructor(private readonly productsService: ProductsService) { }
 
+    @Post()
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Role('admin')
-    @Post()
-    @UseInterceptors(FilesInterceptor('images', 5))
+    @UseInterceptors(FilesInterceptor('files', 5))
     async create(
-        @Body() createProductDto: CreateProductDto,
-        @UploadedFiles() files: Array<Express.Multer.File>,
+        @UploadedFiles() files: Express.Multer.File[],
+        @Body('dto') dto: string
     ) {
-        return this.productsService.create(createProductDto, files);
+        const parsedDto: CreateProductDto = JSON.parse(dto);
+
+        return this.productsService.create(parsedDto, files);
     }
 
 

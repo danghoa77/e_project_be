@@ -14,11 +14,18 @@ async function bootstrap() {
   //   allowedHeaders: 'Content-Type, Accept, Authorization, X-CSRF-Token',
   // });
   app.enableCors({
-    origin: true, // hoặc '*'
-    methods: '*',
+    origin: 'http://localhost:5173',
+    methods: ['GET', 'POST', 'PATCH', 'DELETE'],
     credentials: true,
-    allowedHeaders: '*',
+    allowedHeaders: [
+      'Content-Type',
+      'Accept',
+      'Authorization',
+      'X-CSRF-Token',
+      'ngrok-skip-browser-warning',
+    ],
   });
+
   // Global validation pipe
   app.useGlobalPipes(
     new ValidationPipe({
