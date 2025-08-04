@@ -1,5 +1,3 @@
-name: NestJS CI
-
 on:
   push:
     branches: [main]
