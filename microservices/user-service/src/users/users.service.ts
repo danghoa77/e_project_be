@@ -17,10 +17,14 @@ export class UsersService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     private readonly redisService: RedisService,
-  ) {}
+  ) { }
 
   async findByEmail(email: string): Promise<UserDocument | null> {
     return this.userModel.findOne({ email }).select('+password').exec();
+  }
+
+  async findAll(): Promise<UserDocument[]> {
+    return this.userModel.find().exec();
   }
 
   async createUser(userData: Partial<User>): Promise<UserDocument> {
@@ -82,5 +86,9 @@ export class UsersService {
       }
       throw error;
     }
+  }
+
+  async deleteUser(userId: string): Promise<void> {
+    await this.userModel.findByIdAndDelete(userId);
   }
 }

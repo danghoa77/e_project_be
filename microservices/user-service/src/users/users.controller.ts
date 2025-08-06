@@ -6,11 +6,13 @@ import {
   Patch,
   Req,
   Body,
+  Delete,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '@app/common-auth';
 import { GetUserDto } from './dto/get-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { GetAllDto } from './dto/get-all.dto';
 
 interface AuthenticatedRequest extends Request {
   user: {
@@ -20,7 +22,7 @@ interface AuthenticatedRequest extends Request {
 
 @Controller('users')
 export class UsersController {
-  constructor(private usersService: UsersService) {}
+  constructor(private usersService: UsersService) { }
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
@@ -40,5 +42,17 @@ export class UsersController {
       updateUserDto,
     );
     return updatedUser;
+  }
+
+  @Get('all')
+  async getAllUsers(): Promise<GetAllDto[]> {
+    return this.usersService.findAll();
+  }
+
+  @Delete('id')
+  @UseGuards(JwtAuthGuard)
+  async deleteUser(@Req() req: AuthenticatedRequest) {
+    const userId = req.user.userId;
+    await this.usersService.deleteUser(userId);
   }
 }

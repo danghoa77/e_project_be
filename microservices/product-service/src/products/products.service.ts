@@ -19,6 +19,14 @@ export class ProductsService {
         private cloudinaryService: CloudinaryService,
         private redisService: RedisService,
     ) { }
+    private async invalidateCache() {
+        await this.redisService.set('products:cacheInvalidated', 'true', 60);
+    }
+
+    private async isCacheInvalidated(): Promise<boolean> {
+        const flag = await this.redisService.get('products:cacheInvalidated');
+        return flag === 'true';
+    }
 
     async create(createProductDto: CreateProductDto, files: Array<Express.Multer.File>): Promise<Product> {
         const newProduct = new this.productModel(createProductDto);
@@ -32,8 +40,8 @@ export class ProductsService {
             }));
         }
         const createdProduct = await newProduct.save();
+        await this.invalidateCache();
         this.logger.log(`Created product: ${createdProduct}`);
-        // Invalidate product list cache
         await this.redisService.del('products:all');
         return createdProduct;
     }
@@ -108,53 +116,46 @@ export class ProductsService {
     async findAll(query: ProductQueryDto): Promise<{ products: Product[]; total: number }> {
         const { category, priceMin, priceMax, size, limit = 10, page = 1, sortBy } = query;
 
-        // Try to get from cache first for common queries
+        const cacheInvalidated = await this.isCacheInvalidated();
         const cacheKey = `products:${JSON.stringify(query)}`;
-        const cachedProducts = await this.redisService.get(cacheKey);
-        console.log('Finall');
-        if (cachedProducts) {
-            console.log('Products from Redis cache');
-            const parsed = JSON.parse(cachedProducts);
-            return { products: parsed.products, total: parsed.total };
+
+        if (!cacheInvalidated) {
+            const cachedProducts = await this.redisService.get(cacheKey);
+            if (cachedProducts) {
+                this.logger.log('📦 Returning products from Redis cache');
+                const parsed = JSON.parse(cachedProducts);
+                return { products: parsed.products, total: parsed.total };
+            }
+        } else {
+            this.logger.log('🚨 Cache invalidated → fetching from DB');
         }
 
+        // Build filter
         const filter: any = {};
-        if (category) {
-            filter.category = category;
-        }
+        if (category) filter.category = category;
         if (priceMin || priceMax) {
             filter['variants.price'] = {};
             if (priceMin) filter['variants.price'].$gte = priceMin;
             if (priceMax) filter['variants.price'].$lte = priceMax;
         }
-        if (size) {
-            filter['variants.size'] = size;
-        }
+        if (size) filter['variants.size'] = size;
 
         const skip = (page - 1) * limit;
-        const sort: any = {};
-        if (sortBy) {
-            if (sortBy.startsWith('-')) {
-                sort[sortBy.substring(1)] = -1; // Descending
-            } else {
-                sort[sortBy] = 1; // Ascending
-            }
-        } else {
-            sort.createdAt = -1; // Default: newest first
-        }
-
+        const sort: any = sortBy
+            ? (sortBy.startsWith('-') ? { [sortBy.substring(1)]: -1 } : { [sortBy]: 1 })
+            : { createdAt: -1 };
 
         const [products, total] = await Promise.all([
             this.productModel.find(filter).sort(sort).skip(skip).limit(limit).exec(),
             this.productModel.countDocuments(filter).exec(),
         ]);
 
-        // Cache the result
-        this.logger.log(`Found ${products.length} products.`);
-        await this.redisService.set(cacheKey, JSON.stringify({ products, total }), 60 * 5); // Cache 5 phút
+        await this.redisService.set(cacheKey, JSON.stringify({ products, total }), 60 * 5);
+        await this.redisService.del('products:cacheInvalidated');
+
+        this.logger.log(` DB queried, cached ${products.length} products`);
         return { products, total };
     }
-
     async findOne(id: string): Promise<Product> {
         const cachedProduct = await this.redisService.get(`product:${id}`);
         if (cachedProduct) {
@@ -173,38 +174,42 @@ export class ProductsService {
 
     async update(id: string, updateProductDto: UpdateProductDto, files?: Array<Express.Multer.File>): Promise<Product> {
         const product = await this.productModel.findById(id).exec();
-        if (!product) {
-            throw new NotFoundException('Product does not exist.');
+        if (!product) throw new NotFoundException('Product does not exist.');
+
+
+        if (updateProductDto.deletedImages?.length) {
+            const toDelete = product.images.filter(img =>
+                updateProductDto.deletedImages!.includes(img.cloudinaryId)
+            );
+            await Promise.all(toDelete.map(img => this.cloudinaryService.deleteImage(img.cloudinaryId)));
+            product.images = product.images.filter(img =>
+                !updateProductDto.deletedImages!.includes(img.cloudinaryId)
+            );
         }
 
-        if (files && files.length > 0) {
-            if (product.images && product.images.length > 0) {
-                const deletePromises = product.images.map(img => this.cloudinaryService.deleteImage(img.cloudinaryId));
-                await Promise.all(deletePromises);
-            }
-            // Upload new images
-            const uploadPromises = files.map(file => this.cloudinaryService.uploadImage(file));
-            const results = await Promise.all(uploadPromises);
-            updateProductDto.images = results.map(res => ({
+
+        if (files?.length) {
+            const uploadResults = await Promise.all(files.map(file => this.cloudinaryService.uploadImage(file)));
+            const newImages = uploadResults.map(res => ({
                 url: res.secure_url,
-                cloudinaryId: res.public_id,
+                cloudinaryId: res.public_id
             }));
-        } else if (updateProductDto.images === null) {
-            // If images is set to null, delete existing images
-            if (product.images && product.images.length > 0) {
-                const deletePromises = product.images.map(img => this.cloudinaryService.deleteImage(img.cloudinaryId));
-                await Promise.all(deletePromises);
-            }
-            updateProductDto.images = [];
+            product.images.push(...newImages);
         }
 
+
+        delete updateProductDto.deletedImages;
         Object.assign(product, updateProductDto);
-        const updatedProduct = await product.save();
-        this.logger.log(`Updated product: ${updatedProduct}`);
+
+        const updated = await product.save();
+        await this.invalidateCache();
         await this.redisService.del(`product:${id}`);
         await this.redisService.del('products:all');
-        return updatedProduct;
+
+        return updated;
     }
+
+
 
     async remove(id: string): Promise<void> {
         const product = await this.productModel.findById(id).exec();
@@ -220,6 +225,7 @@ export class ProductsService {
 
         await this.productModel.deleteOne({ _id: id }).exec();
         this.logger.log(`Deleted product: ${id}`);
+        await this.invalidateCache();
         await this.redisService.del(`product:${id}`);
         await this.redisService.del('products:all');
     }
