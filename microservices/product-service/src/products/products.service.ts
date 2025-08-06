@@ -176,7 +176,6 @@ export class ProductsService {
         const product = await this.productModel.findById(id).exec();
         if (!product) throw new NotFoundException('Product does not exist.');
 
-
         if (updateProductDto.deletedImages?.length) {
             const toDelete = product.images.filter(img =>
                 updateProductDto.deletedImages!.includes(img.cloudinaryId)
@@ -187,18 +186,22 @@ export class ProductsService {
             );
         }
 
-
         if (files?.length) {
             const uploadResults = await Promise.all(files.map(file => this.cloudinaryService.uploadImage(file)));
             const newImages = uploadResults.map(res => ({
                 url: res.secure_url,
                 cloudinaryId: res.public_id
             }));
+            if (!product.images) {
+                product.images = [];
+            }
             product.images.push(...newImages);
         }
 
 
         delete updateProductDto.deletedImages;
+        delete updateProductDto.images;
+
         Object.assign(product, updateProductDto);
 
         const updated = await product.save();
