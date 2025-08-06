@@ -1,4 +1,3 @@
-// product-service/src/products/products.controller.ts
 import {
     Controller,
     Get,
@@ -22,7 +21,6 @@ import { RolesGuard, Role, JwtAuthGuard } from '@app/common-auth';
 import { BulkUpdateStockDto } from './dto/bulk-update-stock.dto';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-
 
 @Controller('products')
 export class ProductsController {
@@ -85,12 +83,9 @@ export class ProductsController {
     @UseInterceptors(FilesInterceptor('images', 5))
     async update(
         @Param('id') id: string,
-        // ✅ Dữ liệu DTO vẫn được nhận dưới dạng chuỗi thô
         @Body('updateProductDto') updateProductDtoRaw: string,
         @UploadedFiles() files?: Array<Express.Multer.File>,
     ) {
-        // 1. Parse chuỗi JSON
-        // Nếu không có dữ liệu gửi lên, coi như là một object rỗng
         let parsedObject: object;
         try {
             parsedObject = updateProductDtoRaw ? JSON.parse(updateProductDtoRaw) : {};
@@ -98,23 +93,15 @@ export class ProductsController {
             throw new BadRequestException('Dữ liệu JSON trong trường updateProductDto không hợp lệ.');
         }
 
-        // 2. Chuyển object thường thành một instance của UpdateProductDto
-        // Điều này cần thiết để class-validator có thể nhận diện các decorator (@IsNotEmpty, etc.)
         const dtoInstance = plainToInstance(UpdateProductDto, parsedObject);
-
-        // 3. Thực hiện validation thủ công
         const errors = await validate(dtoInstance);
 
-        // 4. Nếu có lỗi, ném ra exception với thông báo chi tiết
         if (errors.length > 0) {
-            // Lỗi này sẽ được gửi về frontend và bạn có thể thấy nó trong tab Network
             throw new BadRequestException(errors);
         }
 
-        // 5. Nếu mọi thứ hợp lệ, gọi service với DTO đã được xác thực
         return this.productsService.update(id, dtoInstance, files);
     }
-
 
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Role('admin')
