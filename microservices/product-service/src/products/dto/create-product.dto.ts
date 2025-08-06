@@ -44,6 +44,9 @@ export class CreateProductDto {
     @Type(() => ImageDto)
     images: ImageDto[];
 
+    @IsString({ message: 'Description must be a string.' })
+    description: string;
+
     @IsNotEmpty({ message: 'Category must not be empty.' })
     @IsString({ message: 'Category must be a string.' })
     category: string;

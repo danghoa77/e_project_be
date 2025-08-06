@@ -49,6 +49,9 @@ export class Product extends Document {
     @Prop({ type: [ImageSchema], default: [] })
     images: Image[];
 
+    @Prop({ type: String, required: false })
+    description: string;
+
     @Prop({ type: String, required: true, })
     category: string; //[]
 
@@ -58,7 +61,7 @@ export class Product extends Document {
 
 export const ProductSchema = SchemaFactory.createForClass(Product);
 
-// Thêm indexes
+
 // ProductSchema.index({ category: 1 });
 ProductSchema.index({ 'variants.price': 1 });
 ProductSchema.index({ 'variants.size': 1 });

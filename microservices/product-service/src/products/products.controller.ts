@@ -1,4 +1,3 @@
-// product-service/src/products/products.controller.ts
 import {
     Controller,
     Get,
@@ -11,6 +10,7 @@ import {
     UseInterceptors,
     UploadedFiles,
     Query,
+    BadRequestException,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -19,7 +19,8 @@ import { ProductQueryDto } from './dto/product-query.dto';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { RolesGuard, Role, JwtAuthGuard } from '@app/common-auth';
 import { BulkUpdateStockDto } from './dto/bulk-update-stock.dto';
-
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
 
 @Controller('products')
 export class ProductsController {
@@ -31,13 +32,23 @@ export class ProductsController {
     @UseInterceptors(FilesInterceptor('files', 5))
     async create(
         @UploadedFiles() files: Express.Multer.File[],
-        @Body('dto') dto: string
+        @Body('dto') dto?: string,
+        @Body() body?: any
     ) {
-        const parsedDto: CreateProductDto = JSON.parse(dto);
+        let parsedDto: CreateProductDto;
 
-        return this.productsService.create(parsedDto, files);
+        if (dto) {
+            try {
+                parsedDto = JSON.parse(dto);
+            } catch (e) {
+                throw new BadRequestException('Invalid JSON in dto field');
+            }
+        } else {
+            parsedDto = body;
+        }
+
+        return this.productsService.create(parsedDto, files || []);
     }
-
 
     @Get()
     async findAll(@Query() query: ProductQueryDto) {
@@ -72,10 +83,24 @@ export class ProductsController {
     @UseInterceptors(FilesInterceptor('images', 5))
     async update(
         @Param('id') id: string,
-        @Body() updateProductDto: UpdateProductDto,
+        @Body('updateProductDto') updateProductDtoRaw: string,
         @UploadedFiles() files?: Array<Express.Multer.File>,
     ) {
-        return this.productsService.update(id, updateProductDto, files);
+        let parsedObject: object;
+        try {
+            parsedObject = updateProductDtoRaw ? JSON.parse(updateProductDtoRaw) : {};
+        } catch (e) {
+            throw new BadRequestException('Dữ liệu JSON trong trường updateProductDto không hợp lệ.');
+        }
+
+        const dtoInstance = plainToInstance(UpdateProductDto, parsedObject);
+        const errors = await validate(dtoInstance);
+
+        if (errors.length > 0) {
+            throw new BadRequestException(errors);
+        }
+
+        return this.productsService.update(id, dtoInstance, files);
     }
 
     @UseGuards(JwtAuthGuard, RolesGuard)
