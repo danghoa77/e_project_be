@@ -68,7 +68,7 @@ export class OrdersController {
     @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
   ) {
-    return this.ordersService.cancelOrder(id, req.user.userId, req.user.role);
+    return this.ordersService.cancelOrder(id);
   }
 
   // @Role('admin')
