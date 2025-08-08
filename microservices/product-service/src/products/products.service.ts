@@ -216,7 +216,7 @@ export class ProductsService {
 
     async remove(id: string): Promise<void> {
         const product = await this.productModel.findById(id).exec();
-        if (!product) {
+        if (!product) {``
             throw new NotFoundException('Product does not exist.');
         }
 

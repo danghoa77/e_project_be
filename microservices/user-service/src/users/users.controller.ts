@@ -49,7 +49,7 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
-  @Delete('id')
+  @Delete(':id')
   @UseGuards(JwtAuthGuard)
   async deleteUser(@Req() req: AuthenticatedRequest) {
     const userId = req.user.userId;

@@ -36,14 +36,19 @@ export class UsersService {
       ...userData,
       password: hashedPassword,
     });
-    return createdUser.save();
+    const savedUser = await createdUser.save();
+
+    await this.redisService.del(`user:${savedUser._id}`);
+    return savedUser;
   }
 
-  async findUserById(id: string): Promise<GetUserDto> {
-    const cachedUser = await this.redisService.get(`user:${id}`);
-    if (cachedUser) {
-      console.log('User data from Redis cache');
-      return plainToClass(GetUserDto, JSON.parse(cachedUser));
+  async findUserById(id: string, forceRefresh = false): Promise<GetUserDto> {
+    if (!forceRefresh) {
+      const cachedUser = await this.redisService.get(`user:${id}`);
+      if (cachedUser) {
+        console.log('User data from Redis cache');
+        return plainToClass(GetUserDto, JSON.parse(cachedUser));
+      }
     }
 
     const user = await this.userModel.findById(id).exec();
@@ -55,12 +60,9 @@ export class UsersService {
     await this.redisService.set(`user:${id}`, JSON.stringify(userDto), 60 * 5);
     return userDto;
   }
-  async updateProfile(
-    userId: string,
-    updateUserDto: UpdateUserDto,
-  ): Promise<User> {
-    const user = await this.userModel.findById(userId);
 
+  async updateProfile(userId: string, updateUserDto: UpdateUserDto): Promise<User> {
+    const user = await this.userModel.findById(userId);
     if (!user) {
       throw new NotFoundException(`User with ID ${userId} not found.`);
     }
@@ -79,7 +81,9 @@ export class UsersService {
     Object.assign(user, updateUserDto);
 
     try {
-      return await user.save();
+      const updatedUser = await user.save();
+      await this.redisService.del(`user:${userId}`);
+      return updatedUser;
     } catch (error) {
       if (error instanceof MongooseError.ValidationError) {
         throw new BadRequestException(error.errors);
@@ -90,5 +94,6 @@ export class UsersService {
 
   async deleteUser(userId: string): Promise<void> {
     await this.userModel.findByIdAndDelete(userId);
+    await this.redisService.del(`user:${userId}`);
   }
 }
