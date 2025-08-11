@@ -16,15 +16,16 @@ interface ProductVariant {
   _id: string;
   stock: number;
   price: number;
-  salePrice: number;
-  name: string;
-  size: string;
-  color: string;
+  salePrice?: number;
+  name?: string;
+  size?: string;
+  color?: string;
 }
 
 interface ProductData {
   variants: ProductVariant[];
-  name: string;
+  name?: string;
+  imageUrl?: string;
 }
 
 @Injectable()
@@ -37,13 +38,14 @@ export class CartsService {
     private readonly redisService: RedisService,
   ) { }
 
+
   private async _getFreshCartByUserId(userId: string): Promise<CartDocument> {
-    let cart = await this.cartModel
-      .findOne({ userId: new Types.ObjectId(userId) })
-      .exec();
+    const objectUserId = new Types.ObjectId(userId);
+    let cart = await this.cartModel.findOne({ userId: objectUserId }).exec();
     if (!cart) {
+      this.logger.log(`No cart found for user ${userId}. Creating a new one.`);
       cart = new this.cartModel({
-        userId: new Types.ObjectId(userId),
+        userId: objectUserId,
         items: [],
       });
     }
@@ -53,54 +55,104 @@ export class CartsService {
   private async _getProductVariant(
     productId: string,
     variantId: string,
-  ): Promise<ProductVariant> {
+  ): Promise<{ productData: ProductData; variant: ProductVariant }> {
     const productUrl = `http://product-service:3000/products/${productId}`;
-    const response = await firstValueFrom(
-      this.httpService.get<ProductData>(productUrl),
-    );
-    const productData = response.data;
-    if (!productData || !productData.variants) {
-      throw new NotFoundException(`Product data is invalid for ID ${productId}.`);
+
+    let response;
+    try {
+      response = await firstValueFrom(this.httpService.get(productUrl));
+    } catch (err) {
+      this.logger.error(
+        `Failed to fetch product ${productId} from product-service: ${err}`,
+      );
+      throw new NotFoundException(`Product with ID ${productId} not found.`);
     }
-    const variant = productData.variants.find(
-      (v) => v._id.toString() === variantId,
+
+    const productData: ProductData = response?.data;
+    if (!productData || !Array.isArray(productData.variants)) {
+      throw new NotFoundException(
+        `Product data is invalid for ID ${productId}.`,
+      );
+    }
+
+    const found = productData.variants.find(
+      (v: any) => v._id?.toString() === variantId || v._id === variantId,
     );
-    if (!variant) {
+
+    if (!found) {
       throw new BadRequestException(
         `Product variant with ID ${variantId} does not exist.`,
       );
     }
-    return variant;
+    const variant: ProductVariant = {
+      _id: found._id.toString ? found._id.toString() : String(found._id),
+      stock: Number(found.stock ?? 0),
+      price: Number(found.price ?? 0),
+      salePrice: found.salePrice ? Number(found.salePrice) : undefined,
+      name: found.name,
+      size: found.size,
+      color: found.color,
+    };
+    console.log(productData);
+    return { productData, variant };
   }
 
-  async getCartByUserId(userId: string): Promise<Cart> {
+  async getCartByUserId(userId: string): Promise<CartDocument | any> {
     const cacheKey = `cart:${userId}`;
-    const cachedCart = await this.redisService.get(cacheKey);
-    if (cachedCart) {
-      return JSON.parse(cachedCart) as Cart;
+    try {
+      const cachedCart = await this.redisService.get(cacheKey);
+      if (cachedCart) {
+        this.logger.log(`Cart for user ${userId} found in Redis cache.`);
+        return JSON.parse(cachedCart);
+      }
+    } catch (err) {
+      this.logger.warn(`Redis get failed for key ${`cart:${userId}`}: ${err}`);
     }
+
+    this.logger.log(`Cart for user ${userId} not in cache. Finding in DB...`);
     const cart = await this._getFreshCartByUserId(userId);
+
     await cart.save();
-    await this.redisService.set(cacheKey, JSON.stringify(cart.toObject()), 3600);
-    return cart.toObject();
+
+    try {
+      await this.redisService.set(
+        cacheKey,
+        JSON.stringify(cart.toObject ? cart.toObject() : cart),
+        3600,
+      );
+      this.logger.log(`Caching cart for user ${userId}.`);
+    } catch (err) {
+      this.logger.warn(`Redis set failed for key ${cacheKey}: ${err}`);
+    }
+
+    return cart.toObject ? cart.toObject() : cart;
   }
 
   async addItemToCart(
     userId: string,
     addItemDto: AddToCartDto,
   ): Promise<CartDocument> {
-    const { productId, variantId, quantity } = addItemDto;
-    const variant = await this._getProductVariant(productId, variantId);
+    const { productId, variantId, quantity, imageUrl } = addItemDto;
+
+    if (!productId || !variantId || !quantity || quantity <= 0) {
+      throw new BadRequestException('Invalid addItemDto payload.');
+    }
+
+    const { variant } = await this._getProductVariant(productId, variantId);
+    console.log('variant', variant);
     if (variant.stock < quantity) {
       throw new BadRequestException(
         `Insufficient stock for variant ${variantId}. Only ${variant.stock} left.`,
       );
     }
+
     const cart = await this._getFreshCartByUserId(userId);
+
     const existingItemIndex = cart.items.findIndex(
       (item) =>
         item.productId.toString() === productId && item.variantId === variantId,
     );
+
     if (existingItemIndex > -1) {
       const newQuantity = cart.items[existingItemIndex].quantity + quantity;
       if (newQuantity > variant.stock) {
@@ -109,17 +161,25 @@ export class CartsService {
         );
       }
       cart.items[existingItemIndex].quantity = newQuantity;
+      cart.items[existingItemIndex].imageUrl = addItemDto.imageUrl;
+      cart.items[existingItemIndex].price = variant.price;
     } else {
       cart.items.push({
         productId: new Types.ObjectId(productId),
         variantId,
         quantity,
+        imageUrl: addItemDto.imageUrl,
         price: variant.price,
       });
     }
-    await cart.save();
-    await this.redisService.set(`cart:${userId}`, JSON.stringify(cart.toObject()), 3600);
-    return cart;
+
+    try {
+      await this.redisService.del(`cart:${userId}`);
+    } catch (err) {
+      this.logger.warn(`Redis del failed for cart:${userId}: ${err}`);
+    }
+
+    return cart.save();
   }
 
   async removeItemFromCart(
@@ -127,15 +187,48 @@ export class CartsService {
     productId: string,
     variantId: string,
   ): Promise<CartDocument> {
+    const cart = await this._getFreshCartByUserId(userId);
+
+    const itemExists = cart.items.some(
+      (item) =>
+        item.productId.toString() === productId && item.variantId === variantId,
+    );
+
+    if (!itemExists) {
+      throw new NotFoundException(
+        `Không tìm thấy sản phẩm với productId ${productId} và variantId ${variantId} trong giỏ hàng.`,
+      );
+    }
+
+    const objectUserId = new Types.ObjectId(userId);
+    const objectProductId = new Types.ObjectId(productId);
+
     const updatedCart = await this.cartModel.findOneAndUpdate(
-      { userId: new Types.ObjectId(userId) },
-      { $pull: { items: { productId: new Types.ObjectId(productId), variantId } } },
+      { userId: objectUserId },
+      {
+        $pull: {
+          items: {
+            productId: objectProductId,
+            variantId,
+          },
+        },
+      },
       { new: true },
     );
+
+    try {
+      await this.redisService.del(`cart:${userId}`);
+    } catch (err) {
+      this.logger.warn(`Redis del failed for cart:${userId}: ${err}`);
+    }
+
+    this.logger.log(
+      `Item with productId ${productId} and variantId ${variantId} removed from cart for user ${userId}.`,
+    );
+
     if (!updatedCart) {
       throw new NotFoundException('Cart not found');
     }
-    await this.redisService.set(`cart:${userId}`, JSON.stringify(updatedCart.toObject()), 3600);
     return updatedCart;
   }
 
@@ -148,30 +241,53 @@ export class CartsService {
     if (quantity <= 0) {
       return this.removeItemFromCart(userId, productId, variantId);
     }
+
     const cart = await this._getFreshCartByUserId(userId);
     const itemIndex = cart.items.findIndex(
       (item) =>
         item.productId.toString() === productId && item.variantId === variantId,
     );
+
     if (itemIndex === -1) {
       throw new NotFoundException('Item not found in cart.');
     }
-    const variant = await this._getProductVariant(productId, variantId);
+
+    const { variant } = await this._getProductVariant(productId, variantId);
     if (variant.stock < quantity) {
       throw new BadRequestException(
         `Insufficient stock. Only ${variant.stock} left.`,
       );
     }
+
     cart.items[itemIndex].quantity = quantity;
-    await cart.save();
-    await this.redisService.set(`cart:${userId}`, JSON.stringify(cart.toObject()), 3600);
-    return cart;
+    // keep price updated
+    cart.items[itemIndex].price = variant.price;
+
+    try {
+      await this.redisService.del(`cart:${userId}`);
+    } catch (err) {
+      this.logger.warn(`Redis del failed for cart:${userId}: ${err}`);
+    }
+
+    this.logger.log(
+      `Item quantity updated for productId ${productId} and variantId ${variantId} in cart for user ${userId}.`,
+    );
+    return cart.save();
   }
 
   async clearCart(userId: string, session?: ClientSession): Promise<void> {
     const cart = await this._getFreshCartByUserId(userId);
-    cart.items = [];
-    await cart.save({ session });
-    await this.redisService.set(`cart:${userId}`, JSON.stringify(cart.toObject()), 3600);
+    if (cart) {
+      cart.items = [];
+      await cart.save({ session });
+      try {
+        await this.redisService.del(`cart:${userId}`);
+      } catch (err) {
+        this.logger.warn(`Redis del failed for cart:${userId}: ${err}`);
+      }
+      this.logger.log(`Cart for user ${userId} has been cleared.`);
+    }
   }
+
+  // nếu cần, tao có thể implement validateCartStock(...) để check toàn bộ giỏ
 }
