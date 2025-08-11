@@ -7,8 +7,11 @@ export class CartItem {
   @Prop({ type: Types.ObjectId, required: true })
   productId: Types.ObjectId;
 
-  @Prop({ type: String, required: true }) // Dùng String vì _id của sub-document trong Product Service là String
+  @Prop({ type: String, required: true })
   variantId: string;
+
+  @Prop({ type: String, required: true })
+  imageUrl: string;
 
   @Prop({ type: Number, required: true, min: 1 })
   quantity: number;
