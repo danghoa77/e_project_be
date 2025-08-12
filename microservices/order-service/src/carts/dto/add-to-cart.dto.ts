@@ -8,6 +8,10 @@ export class AddToCartDto {
 
   @IsNotEmpty()
   @IsString()
+  name: string;
+
+  @IsNotEmpty()
+  @IsString()
   variantId: string;
 
   @IsNotEmpty()

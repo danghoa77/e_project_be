@@ -167,6 +167,7 @@ export class CartsService {
       cart.items.push({
         productId: new Types.ObjectId(productId),
         variantId,
+        name: addItemDto.name,
         quantity,
         imageUrl: addItemDto.imageUrl,
         price: variant.price,

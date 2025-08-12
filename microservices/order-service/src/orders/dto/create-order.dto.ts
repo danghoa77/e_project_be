@@ -1,7 +1,7 @@
 // order-service/src/orders/dto/create-order.dto.ts
 import { IsNotEmpty, IsString, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
-import { AddToCartDto } from '../../carts/dto/add-to-cart.dto'; // Reuse cart items structure
+import { AddToCartDto } from '../../carts/dto/add-to-cart.dto'; 
 
 class ShippingAddressDto {
   @IsNotEmpty({ message: 'Street address must not be empty.' })

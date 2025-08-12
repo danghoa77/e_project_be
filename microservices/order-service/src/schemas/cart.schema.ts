@@ -8,6 +8,9 @@ export class CartItem {
   productId: Types.ObjectId;
 
   @Prop({ type: String, required: true })
+  name: string;
+
+  @Prop({ type: String, required: true })
   variantId: string;
 
   @Prop({ type: String, required: true })
