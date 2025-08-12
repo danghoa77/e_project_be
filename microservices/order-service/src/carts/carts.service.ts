@@ -112,7 +112,9 @@ export class CartsService {
     this.logger.log(`Cart for user ${userId} not in cache. Finding in DB...`);
     const cart = await this._getFreshCartByUserId(userId);
 
-    await cart.save();
+    if (cart.isNew) {
+      await cart.save();
+    }
 
     try {
       await this.redisService.set(
@@ -132,14 +134,13 @@ export class CartsService {
     userId: string,
     addItemDto: AddToCartDto,
   ): Promise<CartDocument> {
-    const { productId, variantId, quantity, imageUrl } = addItemDto;
+    const { productId, variantId, quantity } = addItemDto;
 
     if (!productId || !variantId || !quantity || quantity <= 0) {
       throw new BadRequestException('Invalid addItemDto payload.');
     }
 
     const { variant } = await this._getProductVariant(productId, variantId);
-    console.log('variant', variant);
     if (variant.stock < quantity) {
       throw new BadRequestException(
         `Insufficient stock for variant ${variantId}. Only ${variant.stock} left.`,
@@ -148,28 +149,34 @@ export class CartsService {
 
     const cart = await this._getFreshCartByUserId(userId);
 
-    const existingItemIndex = cart.items.findIndex(
+    const existingItem = cart.items.find(
       (item) =>
-        item.productId.toString() === productId && item.variantId === variantId,
+        item.productId.toString() === productId &&
+        item.variantId === variantId,
     );
 
-    if (existingItemIndex > -1) {
-      const newQuantity = cart.items[existingItemIndex].quantity + quantity;
+    if (existingItem) {
+      const newQuantity = existingItem.quantity + quantity;
       if (newQuantity > variant.stock) {
         throw new BadRequestException(
           `Cannot add. Total quantity in cart (${newQuantity}) exceeds stock (${variant.stock}).`,
         );
       }
-      cart.items[existingItemIndex].quantity = newQuantity;
-      cart.items[existingItemIndex].imageUrl = addItemDto.imageUrl;
-      cart.items[existingItemIndex].price = variant.price;
+      existingItem.quantity = newQuantity;
+      existingItem.imageUrl = addItemDto.imageUrl ?? existingItem.imageUrl;
+      existingItem.price = variant.price;
+      existingItem.size = addItemDto.size ?? existingItem.size;
+      existingItem.color = addItemDto.color ?? existingItem.color;
     } else {
       cart.items.push({
         productId: new Types.ObjectId(productId),
         variantId,
+        name: addItemDto.name,
         quantity,
         imageUrl: addItemDto.imageUrl,
         price: variant.price,
+        size: addItemDto.size,
+        color: addItemDto.color,
       });
     }
 
@@ -181,6 +188,7 @@ export class CartsService {
 
     return cart.save();
   }
+
 
   async removeItemFromCart(
     userId: string,
@@ -196,7 +204,7 @@ export class CartsService {
 
     if (!itemExists) {
       throw new NotFoundException(
-        `Không tìm thấy sản phẩm với productId ${productId} và variantId ${variantId} trong giỏ hàng.`,
+        `Cannot find item with productId ${productId} and variantId ${variantId} in this cart.`,
       );
     }
 

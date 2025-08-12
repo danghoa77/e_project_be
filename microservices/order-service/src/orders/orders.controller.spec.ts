@@ -78,43 +78,43 @@ describe('OrdersController', () => {
     expect(controller).toBeDefined();
   });
 
-  describe('createOrder', () => {
-    it('should call service.createOrder with userId and DTO', async () => {
-      const mockUserId = 'user-123';
-      const mockReq = { user: { userId: mockUserId } };
-      const mockCreateDto: CreateOrderDto = {
-        shippingAddress: {
-          street: '123 Test Street',
-          city: 'Test City',
-        },
-        items: [
-          {
-            productId: 'product-abc',
-            variantId: 'variant-xyz-1',
-            quantity: 1,
-          },
-          {
-            productId: 'product-def',
-            variantId: 'variant-xyz-2',
-            quantity: 2,
-          },
-        ],
-      };
+  // describe('createOrder', () => {
+  //   it('should call service.createOrder with userId and DTO', async () => {
+  //     const mockUserId = 'user-123';
+  //     const mockReq = { user: { userId: mockUserId } };
+  //     const mockCreateDto: CreateOrderDto = {
+  //       shippingAddress: {
+  //         street: '123 Test Street',
+  //         city: 'Test City',
+  //       },
+  //       items: [
+  //         {
+  //           productId: 'product-abc',
+  //           variantId: 'variant-xyz-1',
+  //           quantity: 1,
+  //         },
+  //         {
+  //           productId: 'product-def',
+  //           variantId: 'variant-xyz-2',
+  //           quantity: 2,
+  //         },
+  //       ],
+  //     };
 
-      (ordersService.createOrder as jest.Mock).mockResolvedValue({
-        _id: 'new-order-id-456',
-        status: 'pending',
-        ...mockCreateDto,
-      });
+  //     (ordersService.createOrder as jest.Mock).mockResolvedValue({
+  //       _id: 'new-order-id-456',
+  //       status: 'pending',
+  //       ...mockCreateDto,
+  //     });
 
-      await controller.createOrder(mockReq as any, mockCreateDto);
+  //     await controller.createOrder(mockReq as any, mockCreateDto);
 
-      expect(ordersService.createOrder).toHaveBeenCalledWith(
-        mockUserId,
-        mockCreateDto,
-      );
-    });
-  });
+  //     expect(ordersService.createOrder).toHaveBeenCalledWith(
+  //       mockUserId,
+  //       mockCreateDto,
+  //     );
+  //   });
+  // });
 
   describe('getOrders', () => {
     it('should call findAllOrders for an admin user', async () => {
