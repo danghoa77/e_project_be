@@ -14,7 +14,7 @@ export class AddToCartDto {
   @IsString()
   variantId: string;
 
-  @IsNotEmpty()
+  
   @IsString()
   imageUrl: string;
 
@@ -29,4 +29,8 @@ export class AddToCartDto {
   @IsNumber()
   @Min(1)
   quantity: number;
+
+  @IsNumber()
+  @Min(0)
+  price: number;
 }

@@ -37,11 +37,15 @@ export class OrdersService {
   ) { }
 
   async createOrder(userId: string, createOrderDto: CreateOrderDto) {
-    const order = new this.orderModel({ ...createOrderDto, userId });
-    await order.save();
-    await this.redisService.del(`orders:user:${userId}`);
-    await this.redisService.del(`orders:all`);
-    return order;
+    try {
+      const order = new this.orderModel({ ...createOrderDto, userId });
+      await order.save();
+      await this.redisService.del(`orders:user:${userId}`);
+      await this.redisService.del(`orders:all`);
+      return order;
+    }
+    catch (err) { throw new BadRequestException(err.message) }
+
   }
 
   async findOrdersByUserId(userId: string) {
