@@ -4,7 +4,7 @@ import { HydratedDocument } from 'mongoose';
 
 export type UserDocument = HydratedDocument<User>;
 // Address sẽ là một sub-document (schema con)
-@Schema({ _id: false })
+@Schema()
 export class Address {
   @Prop({ required: true })
   street: string;
@@ -31,7 +31,7 @@ export class User {
   @Prop({ required: true, select: false })
   password: string;
 
-  @Prop({ required: true })
+  @Prop({ required: false })
   name: string;
 
   @Prop({ required: false })

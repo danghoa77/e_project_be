@@ -1,7 +1,8 @@
 // order-service/src/orders/dto/create-order.dto.ts
-import { IsNotEmpty, IsString, ValidateNested } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsString, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
-import { AddToCartDto } from '../../carts/dto/add-to-cart.dto'; 
+import { OrderDto } from '../../carts/dto/order.dto';
+
 
 class ShippingAddressDto {
   @IsNotEmpty({ message: 'Street address must not be empty.' })
@@ -15,11 +16,15 @@ class ShippingAddressDto {
 
 export class CreateOrderDto {
   @ValidateNested({ each: true })
-  @Type(() => AddToCartDto)
-  items: AddToCartDto[];
+  @Type(() => OrderDto)
+  items: OrderDto[];
 
   @IsNotEmpty({ message: 'Shipping address must not be empty.' })
   @ValidateNested()
   @Type(() => ShippingAddressDto)
   shippingAddress: ShippingAddressDto;
+
+  @IsNotEmpty({ message: 'Total price must not be empty.' })
+  @Type(() => Number)
+  totalPrice: number
 }
