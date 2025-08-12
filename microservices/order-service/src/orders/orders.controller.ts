@@ -45,10 +45,10 @@ export class OrdersController {
     return this.ordersService.findOrdersByUserId(req.user.userId);
   }
 
-  @Get('all')
-  async getAllOrders(@Req() req: AuthenticatedRequest) {
-    return this.ordersService.findAllOrders();
-  }
+  // @Get('all')
+  // async getAllOrders(@Req() req: AuthenticatedRequest) {
+  //   return this.ordersService.findAllOrders();
+  // }
   //search
   @Get(':id')
   async getOrderById(
@@ -99,7 +99,4 @@ export class OrdersController {
       | 'cancelled',
     );
   }
-
-
-
 }

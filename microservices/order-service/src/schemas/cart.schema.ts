@@ -16,6 +16,12 @@ export class CartItem {
   @Prop({ type: String, required: true })
   imageUrl: string;
 
+  @Prop({ type: String, required: true })
+  size: string;
+
+  @Prop({ type: String, required: true })
+  color: string;
+
   @Prop({ type: Number, required: true, min: 1 })
   quantity: number;
 

@@ -18,6 +18,14 @@ export class AddToCartDto {
   @IsString()
   imageUrl: string;
 
+  @IsNotEmpty()
+  @IsString()
+  size: string;
+
+  @IsNotEmpty()
+  @IsString()
+  color: string;
+
   @IsNumber()
   @Min(1)
   quantity: number;
