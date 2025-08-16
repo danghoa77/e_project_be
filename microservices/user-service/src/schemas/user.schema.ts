@@ -1,11 +1,14 @@
 // user.schema.ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
+import mongoose, { HydratedDocument } from 'mongoose';
 
 export type UserDocument = HydratedDocument<User>;
 // Address sẽ là một sub-document (schema con)
 @Schema()
 export class Address {
+  @Prop({ type: mongoose.Schema.Types.ObjectId, auto: true })
+  _id: string;
+
   @Prop({ required: true })
   street: string;
 
