@@ -16,7 +16,7 @@ export class Payment {
     @Prop({ type: Types.ObjectId, ref: 'Order', required: true })
     orderId: Types.ObjectId;
 
-    @Prop({ type: Types.ObjectId, ref: 'User', required: false })
+    @Prop({ type: Types.ObjectId, ref: 'User', required: true })
     userId: Types.ObjectId;
 
     @Prop({ required: true })

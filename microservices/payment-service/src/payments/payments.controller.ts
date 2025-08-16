@@ -30,7 +30,7 @@ export class PaymentsController {
     async createMomoPayment(
         @Req() req: any,
         @Body() body: { orderId: string; amount: number }) {
-        const result = await this.paymentsService.createMomoPayment(body.orderId, body.amount, req.userId);
+        const result = await this.paymentsService.createMomoPayment(body.orderId, body.amount, req.user.userId);
         return result;
     }
 
