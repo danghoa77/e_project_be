@@ -18,12 +18,7 @@ import {
 import { PaymentsService } from './payments.service';
 import { Response } from 'express';
 import { JwtAuthGuard, Role, RolesGuard } from '@app/common-auth';
-interface AuthenticatedRequest extends Request {
-    user: {
-        userId: string;
-        role: string;
-    };
-}
+
 @Controller('payments')
 @UseGuards(JwtAuthGuard)
 export class PaymentsController {
@@ -32,16 +27,19 @@ export class PaymentsController {
 
 
     @Post('momo/create')
-    async createMomoPayment(@Body() body: { orderId: string; amount: number }) {
-        const result = await this.paymentsService.createMomoPayment(body.orderId, body.amount);
+    async createMomoPayment(
+        @Req() req: any,
+        @Body() body: { orderId: string; amount: number }) {
+        const result = await this.paymentsService.createMomoPayment(body.orderId, body.amount, req.userId);
         return result;
     }
 
 
-    @Post('momo/ipn')
-    async momoIPN(@Body() body: any) {
-        this.logger.log('Momo IPN called', body);
-        return this.paymentsService.handleMomoIPN(body);
+    @Post('momo/return')
+    async momoIPN(@Body() body: { orderId: string; resultCode: string }) {
+        const { orderId, resultCode } = body;
+        this.logger.log('Momo IPN called', { orderId, resultCode });
+        return this.paymentsService.handleMomoURL(body.resultCode, body.orderId);
     }
 
     @Get(':orderId')
