@@ -29,7 +29,7 @@ export class ProductsController {
     @Post()
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Role('admin')
-    @UseInterceptors(FilesInterceptor('files', 5))
+    @UseInterceptors(FilesInterceptor('images', 5))
     async create(
         @UploadedFiles() files: Express.Multer.File[],
         @Body('dto') dto?: string,

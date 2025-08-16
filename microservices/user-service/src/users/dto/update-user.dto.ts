@@ -11,6 +11,11 @@ import {
 import { Type } from 'class-transformer';
 
 class AddressDto {
+
+  @IsOptional()
+  @IsString()
+  _id?: string;
+
   @IsString()
   street: string;
 

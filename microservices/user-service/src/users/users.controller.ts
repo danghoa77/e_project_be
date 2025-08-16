@@ -7,6 +7,9 @@ import {
   Req,
   Body,
   Delete,
+  Param,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '@app/common-auth';
@@ -55,4 +58,16 @@ export class UsersController {
     const userId = req.user.userId;
     await this.usersService.deleteUser(userId);
   }
+
+  @Delete('me/addresses/:addressId')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteMyAddress(
+    @Req() req: AuthenticatedRequest,
+    @Param('addressId') addressId: string,
+  ): Promise<void> {
+    const userId = req.user.userId;
+    await this.usersService.deleteAddress(userId, addressId);
+  }
+
 }
