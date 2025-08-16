@@ -17,7 +17,7 @@ export class PaymentsService {
         private configService: ConfigService,
     ) { }
 
-    async createMomoPayment(orderId: string, amount: number) {
+    async createMomoPayment(orderId: string, amount: number, userId: string) {
         const partnerCode = this.configService.get<string>('MOMO_PARTNER_CODE');
         const accessKey = this.configService.get<string>('MOMO_ACCESS_KEY');
         const secretKey = this.configService.get<string>('MOMO_SECRET_KEY');
@@ -28,45 +28,38 @@ export class PaymentsService {
         if (!partnerCode || !accessKey || !secretKey || !endpoint || !redirectUrl || !ipnUrl) {
             throw new InternalServerErrorException('Missing MoMo environment configuration');
         }
-
+        this.logger.log("UserId", userId);
         const requestId = `${partnerCode}${Date.now()}`;
         const orderInfo = `Thanh toan don hang ${orderId}`;
-        const requestType = 'captureWallet';
-        const extraData = ''; 
+        const requestType = 'payWithMethod';
+        const extraData = '';
 
+        // Chuỗi ký theo docs
         const rawSignature =
-            `accessKey=${accessKey}` +
-            `&amount=${amount}` +
-            `&extraData=${extraData}` +
-            `&ipnUrl=${ipnUrl}` +
-            `&orderId=${orderId}` +
-            `&orderInfo=${orderInfo}` +
-            `&partnerCode=${partnerCode}` +
-            `&redirectUrl=${redirectUrl}` +
-            `&requestId=${requestId}` +
-            `&requestType=${requestType}`;
+            `accessKey=${accessKey}&amount=${amount}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${partnerCode}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
 
         const signature = crypto
             .createHmac('sha256', secretKey)
             .update(rawSignature)
             .digest('hex');
 
-        const requestBody = {
+        const requestBody: any = {
             partnerCode,
-            accessKey,
+            partnerName: 'Test',
+            storeId: 'MomoTestStore',
             requestId,
             amount: String(amount),
             orderId,
             orderInfo,
             redirectUrl,
             ipnUrl,
-            extraData,
-            requestType,
-            signature,
             lang: 'vi',
-            payType: 'bank',
-            bankCode: 'NCB',
+            requestType,
+            autoCapture: true,
+            extraData,
+            signature,
         };
+
 
         try {
             const response = await axios.post(endpoint, requestBody, {
@@ -78,39 +71,39 @@ export class PaymentsService {
             await this.paymentModel.create({
                 orderId,
                 amount,
+                userId,
                 status: 'PENDING',
                 provider: 'MOMO',
                 createdAt: new Date(),
             });
             const url = response.data.payUrl;
-            return url
+
+            return url;
         } catch (error) {
             const errData = error.response?.data ? JSON.stringify(error.response.data) : error.message;
             this.logger.error(`Momo payment creation failed: ${errData}`, error.stack);
             throw new InternalServerErrorException('Create Momo payment failed');
         }
-
     }
 
 
-    async handleMomoIPN(ipnData: any) {
-        this.logger.log(`Received Momo IPN: ${JSON.stringify(ipnData)}`);
 
-        const { orderId, resultCode, message } = ipnData;
+    async handleMomoURL(resultCode: string, orderId: string) {
 
-        if (resultCode === 0) {
+        if (resultCode === '0') {
             await this.paymentModel.updateOne(
                 { orderId },
-                { status: 'SUCCESS', message },
+                { status: 'SUCCESS' },
             );
+            this.logger.log("success")
         } else {
             await this.paymentModel.updateOne(
                 { orderId },
-                { status: 'FAILED', message },
+                { status: 'FAILED' },
             );
+            this.logger.log("failed")
         }
-
-        return { message: 'IPN received' };
+        return { resultCode };
     }
 
     async getPaymentByOrderId(orderId: string): Promise<Payment | null> {
