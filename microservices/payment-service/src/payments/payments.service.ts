@@ -95,6 +95,7 @@ export class PaymentsService {
                 { orderId },
                 { status: 'SUCCESS' },
             );
+            
             this.logger.log("success")
         } else {
             await this.paymentModel.updateOne(
@@ -105,6 +106,7 @@ export class PaymentsService {
         }
         return { resultCode };
     }
+
 
     async getPaymentByOrderId(orderId: string): Promise<Payment | null> {
         return this.paymentModel.findOne({ orderId: new Types.ObjectId(orderId) }).exec();

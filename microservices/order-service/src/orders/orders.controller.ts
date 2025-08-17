@@ -58,7 +58,7 @@ export class OrdersController {
     const order = await this.ordersService.findOrderById(id);
     if (
       req.user.role !== 'admin' &&
-      order.userId.toHexString() !== req.user.userId
+      order.userId.toString() !== req.user.userId
     ) {
       throw new NotFoundException(
         'The order does not exist or you do not have access.',
