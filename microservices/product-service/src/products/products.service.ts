@@ -77,41 +77,56 @@ export class ProductsService {
     }
 
     async decreaseStockForOrder(items: UpdateStockItemDto[]): Promise<{ message: string }> {
-        const session = await this.connection.startSession();
-        session.startTransaction();
-        this.logger.log(`Starting transaction to decrease stock for ${items.length} items.`);
+        const MAX_RETRIES = 3;
 
-        try {
-            for (const item of items) {
-                const product = await this.productModel.findById(item.productId).session(session);
+        for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+            const session = await this.connection.startSession();
+            session.startTransaction();
 
-                if (!product) {
-                    throw new NotFoundException(`Product with ID ${item.productId} not found.`);
+            try {
+                for (const item of items) {
+                    const res = await this.productModel.updateOne(
+                        {
+                            _id: item.productId,
+                            "variants._id": item.variantId,
+                            "variants.stock": { $gte: item.quantity },
+                        },
+                        {
+                            $inc: { "variants.$.stock": -item.quantity },
+                        },
+                        { session }
+                    );
+
+                    if (res.modifiedCount === 0) {
+                        throw new BadRequestException(
+                            `Insufficient stock for this product`
+                        );
+                    }
                 }
 
-                const variant = product.variants.find(v => v._id.toString() === item.variantId);
-                if (!variant) {
-                    throw new BadRequestException(`Variant with ID ${item.variantId} not found.`);
-                }
-                if (variant.stock < item.quantity) {
-                    throw new BadRequestException(`Insufficient stock for product ${product.name}, variant ${variant.size}-${variant.color}.`);
+                await session.commitTransaction();
+                session.endSession();
+                this.logger.log(`Stock decreased successfully. Transaction committed.`);
+                return { message: "Stock updated successfully" };
+
+            } catch (error: any) {
+                await session.abortTransaction();
+                session.endSession();
+
+                if (error.errorLabels?.includes("TransientTransactionError") && attempt < MAX_RETRIES) {
+                    this.logger.warn(`Write conflict detected. Retrying attempt ${attempt}/${MAX_RETRIES}...`);
+                    await new Promise(res => setTimeout(res, 100 * attempt));
+                    continue;
                 }
 
-                variant.stock -= item.quantity;
-                await product.save({ session });
+                this.logger.error(`Failed to decrease stock. Transaction aborted.`, error.stack);
+                throw error;
             }
-            await session.commitTransaction();
-            this.logger.log(`Stock decreased successfully. Transaction committed.`);
-            return { message: 'Stock updated successfully' };
-
-        } catch (error) {
-            await session.abortTransaction();
-            this.logger.error(`Failed to decrease stock. Transaction aborted.`, error.stack);
-            throw error;
-        } finally {
-            session.endSession();
         }
+
+        throw new Error("Failed to decrease stock after multiple retries");
     }
+
 
     async findAll(query: ProductQueryDto): Promise<{ products: Product[]; total: number }> {
         const { category, priceMin, priceMax, size, limit = 10, page = 1, sortBy } = query;
@@ -211,8 +226,6 @@ export class ProductsService {
 
         return updated;
     }
-
-
 
     async remove(id: string): Promise<void> {
         const product = await this.productModel.findById(id).exec();

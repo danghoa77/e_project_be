@@ -42,6 +42,24 @@ export class PaymentsController {
         return this.paymentsService.handleMomoURL(body.resultCode, body.orderId);
     }
 
+    @Post('vnpay/create')
+    createVnpayPayment(
+        @Req() req: any,
+        @Body() body: { orderId: string; amount: number }) {
+        const ipAddr = req.headers['x-forwarded-for'] || (req as any).socket.remoteAddress;
+
+        const result = this.paymentsService.createVnpayPaymentUrl(ipAddr, body.amount, body.orderId, req.user.userId);
+        return result;
+    }
+
+    @Post('vnpay/return')
+    async vnpayIPN(@Body() body: { orderId: string; responseCode: string }) {
+        const { orderId, responseCode } = body;
+        return this.paymentsService.handleVnpayUrl(responseCode, orderId);
+    }
+
+
+
     @Get(':orderId')
     @UseGuards(JwtAuthGuard)
     async getPaymentStatus(@Req() req: any, @Param('orderId') orderId: string) {

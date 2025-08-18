@@ -7,7 +7,8 @@ import { HttpService } from '@nestjs/axios';
 import { RedisService } from '@app/common-auth';
 import axios from 'axios';
 import * as crypto from 'crypto';
-
+import * as qs from 'qs';
+import { format } from 'date-fns';
 
 @Injectable()
 export class PaymentsService {
@@ -16,6 +17,91 @@ export class PaymentsService {
         @InjectModel(Payment.name) private paymentModel: Model<Payment>,
         private configService: ConfigService,
     ) { }
+
+
+    // handle Vnpay payment info on docs
+    private _sortObject(obj: any): any {
+        const sorted: any = {};
+        const str: string[] = [];
+        let key: any;
+        for (key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                str.push(encodeURIComponent(key));
+            }
+        }
+        str.sort();
+        for (key = 0; key < str.length; key++) {
+            sorted[str[key]] = encodeURIComponent(obj[str[key]]).replace(/%20/g, "+");
+        }
+        return sorted;
+    }
+
+    async createVnpayPaymentUrl(ipAddr: string, amount: number, orderId: string, userId: string): Promise<string> {
+        process.env.TZ = 'Asia/Ho_Chi_Minh';
+
+        const tmnCode = this.configService.get<string>('VNPAY_TMN_CODE');
+        const secretKey = this.configService.get<string>('VNPAY_HASH_SECRET');
+        let vnpUrl = this.configService.get<string>('VNPAY_URL');
+        const returnUrl = this.configService.get<string>('VNPAY_RETURN_URL');
+
+        if (!tmnCode || !secretKey || !vnpUrl) {
+            this.logger.error('VNPAY configuration is missing in .env file');
+            throw new InternalServerErrorException('VNPAY configuration is missing.');
+        }
+        const createDate = format(new Date(), 'yyyyMMddHHmmss');
+
+        let vnp_Params: any = {};
+        vnp_Params['vnp_Version'] = '2.1.0';
+        vnp_Params['vnp_Command'] = 'pay';
+        vnp_Params['vnp_TmnCode'] = tmnCode;
+        vnp_Params['vnp_Locale'] = 'vn';
+        vnp_Params['vnp_CurrCode'] = 'VND';
+        vnp_Params['vnp_TxnRef'] = orderId;
+        vnp_Params['vnp_OrderInfo'] = ` ${orderId}`;
+        vnp_Params['vnp_OrderType'] = 'other';
+        vnp_Params['vnp_Amount'] = amount * 100;
+        vnp_Params['vnp_IpAddr'] = ipAddr;
+        vnp_Params['vnp_CreateDate'] = createDate;
+        vnp_Params['vnp_BankCode'] = 'NCB';
+        vnp_Params['vnp_ReturnUrl'] = returnUrl;
+
+        vnp_Params = this._sortObject(vnp_Params);
+        const signData = qs.stringify(vnp_Params, { encode: false });
+        const hmac = crypto.createHmac("sha512", secretKey);
+        const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest("hex");
+
+        vnp_Params['vnp_SecureHash'] = signed;
+        vnpUrl += '?' + qs.stringify(vnp_Params, { encode: false });
+
+        await this.paymentModel.create({
+            orderId,
+            amount,
+            userId,
+            status: 'PENDING',
+            provider: 'VNPAY',
+            createdAt: new Date(),
+        });
+        this.logger.log(`Created VNPAY URL: ${vnpUrl}`);
+        return vnpUrl;
+
+    }
+
+    async handleVnpayUrl(responseCode: string, orderId: string) {
+        if (responseCode === '00') {
+            await this.paymentModel.updateOne(
+                { orderId },
+                { status: 'SUCCESS' },
+            );
+            this.logger.log("success")
+        } else {
+            await this.paymentModel.updateOne(
+                { orderId },
+                { status: 'FAILED' },
+            );
+            this.logger.log("failed")
+        }
+        return { responseCode }
+    }
 
     async createMomoPayment(orderId: string, amount: number, userId: string) {
         const partnerCode = this.configService.get<string>('MOMO_PARTNER_CODE');
@@ -34,7 +120,7 @@ export class PaymentsService {
         const requestType = 'payWithMethod';
         const extraData = '';
 
-        // Chuỗi ký theo docs
+        // Signature based on docs
         const rawSignature =
             `accessKey=${accessKey}&amount=${amount}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${partnerCode}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
 
@@ -86,8 +172,6 @@ export class PaymentsService {
         }
     }
 
-
-
     async handleMomoURL(resultCode: string, orderId: string) {
 
         if (resultCode === '0') {
@@ -95,7 +179,7 @@ export class PaymentsService {
                 { orderId },
                 { status: 'SUCCESS' },
             );
-            
+
             this.logger.log("success")
         } else {
             await this.paymentModel.updateOne(
@@ -106,7 +190,6 @@ export class PaymentsService {
         }
         return { resultCode };
     }
-
 
     async getPaymentByOrderId(orderId: string): Promise<Payment | null> {
         return this.paymentModel.findOne({ orderId: new Types.ObjectId(orderId) }).exec();
