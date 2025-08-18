@@ -49,8 +49,34 @@ export class CartsService {
         items: [],
       });
     }
+
+    const updatedItems = await Promise.all(
+      cart.items.map(async (item) => {
+        try {
+          const Url = `http://product-service:3000/products/${item.productId}`;
+          const res = await firstValueFrom(this.httpService.get(Url));
+          const productData = res.data;
+
+          return {
+            ...(item as any).toObject?.() ?? item,
+            price: productData.price,
+          };
+
+        } catch (err) {
+          this.logger.error(`Failed to fetch product ${item.productId}: ${err.message}`);
+          return {
+            ...(item as any).toObject?.() ?? item,
+            price: null,
+          };
+        }
+      })
+    );
+
+    cart.set('items', updatedItems, { strict: false });
+    this.logger.log("Cart with prices", cart);
     return cart;
   }
+
 
   private async _getProductVariant(
     productId: string,
@@ -97,38 +123,42 @@ export class CartsService {
     return { productData, variant };
   }
 
-  async getCartByUserId(userId: string): Promise<CartDocument | any> {
-    const cacheKey = `cart:${userId}`;
-    try {
-      const cachedCart = await this.redisService.get(cacheKey);
-      if (cachedCart) {
-        this.logger.log(`Cart for user ${userId} found in Redis cache.`);
-        return JSON.parse(cachedCart);
-      }
-    } catch (err) {
-      this.logger.warn(`Redis get failed for key ${`cart:${userId}`}: ${err}`);
-    }
+  async getCartByUserId(userId: string): Promise<any[]> {
+    const objectUserId = new Types.ObjectId(userId);
+    const cart = await this.cartModel.findOne({ userId: objectUserId }).exec();
 
-    this.logger.log(`Cart for user ${userId} not in cache. Finding in DB...`);
-    const cart = await this._getFreshCartByUserId(userId);
+    if (!cart || cart.items.length === 0) return [];
 
-    if (cart.isNew) {
-      await cart.save();
-    }
+    const products = await Promise.all(
+      cart.items.map(async (item) => {
+        const url = `http://product-service:3000/products/${item.productId}`;
+        const res = await firstValueFrom(this.httpService.get(url));
+        const product = res.data;
 
-    try {
-      await this.redisService.set(
-        cacheKey,
-        JSON.stringify(cart.toObject ? cart.toObject() : cart),
-        3600,
-      );
-      this.logger.log(`Caching cart for user ${userId}.`);
-    } catch (err) {
-      this.logger.warn(`Redis set failed for key ${cacheKey}: ${err}`);
-    }
+        const variant = product.variants.find(v => v._id === item.variantId);
 
-    return cart.toObject ? cart.toObject() : cart;
+        if (!variant) {
+          throw new Error(`Variant ${item.variantId} not found for product ${product._id}`);
+        }
+
+        return {
+          productId: product._id,
+          name: product.name,
+          variantId: variant._id,
+          imageUrl: product.images[0]?.url,
+          size: variant.size,
+          color: variant.color,
+          price: variant.price,
+          quantity: item.quantity,
+          total: variant.price * item.quantity
+        };
+      })
+    );
+    this.logger.log("Cart with prices", products);
+    return products;
   }
+
+
 
   async addItemToCart(
     userId: string,
@@ -163,20 +193,12 @@ export class CartsService {
         );
       }
       existingItem.quantity = newQuantity;
-      existingItem.imageUrl = addItemDto.imageUrl ?? existingItem.imageUrl;
-      existingItem.price = variant.price;
-      existingItem.size = addItemDto.size ?? existingItem.size;
-      existingItem.color = addItemDto.color ?? existingItem.color;
+
     } else {
       cart.items.push({
         productId: new Types.ObjectId(productId),
         variantId,
-        name: addItemDto.name,
         quantity,
-        imageUrl: addItemDto.imageUrl,
-        price: variant.price,
-        size: addItemDto.size,
-        color: addItemDto.color,
       });
     }
 
@@ -269,7 +291,7 @@ export class CartsService {
 
     cart.items[itemIndex].quantity = quantity;
     // keep price updated
-    cart.items[itemIndex].price = variant.price;
+    // cart.items[itemIndex].price = variant.price;
 
     try {
       await this.redisService.del(`cart:${userId}`);

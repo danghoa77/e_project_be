@@ -90,7 +90,7 @@ export class ProductsController {
         try {
             parsedObject = updateProductDtoRaw ? JSON.parse(updateProductDtoRaw) : {};
         } catch (e) {
-            throw new BadRequestException('Dữ liệu JSON trong trường updateProductDto không hợp lệ.');
+            throw new BadRequestException('Data is invalid.');
         }
 
         const dtoInstance = plainToInstance(UpdateProductDto, parsedObject);
