@@ -9,6 +9,7 @@ import {
   Put,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -98,5 +99,17 @@ export class OrdersController {
       | 'delivered'
       | 'cancelled',
     );
+  }
+
+  @Post(':orderId/:paymentMethod')
+  async changePaymentMethod(
+    @Param('orderId') orderId: string,
+    @Param('paymentMethod') paymentMethod: 'CASH' | 'VNPAY' | 'MOMO',
+  ) {
+    try {
+      return await this.ordersService.changePaymentMethod(orderId, paymentMethod);
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
   }
 }

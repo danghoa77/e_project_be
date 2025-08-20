@@ -26,6 +26,9 @@ export class Payment {
     status: PaymentStatus;
 
     @Prop()
+    provider?: string;
+
+    @Prop()
     payDate?: Date;
 
     createdAt: Date;

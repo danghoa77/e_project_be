@@ -62,6 +62,14 @@ export class Order extends Document {
   })
   status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
 
+  @Prop({
+    type: String,
+    enum: ['CASH', 'VNPAY', 'MOMO'],
+    default: 'CASH',
+    index: true,
+  })
+  paymentMethod: 'CASH' | 'VNPAY' | 'MOMO';
+
   @Prop({ type: ShippingAddressSchema, required: true })
   shippingAddress: ShippingAddress;
 }
