@@ -16,6 +16,7 @@ export class PaymentsService {
     constructor(
         @InjectModel(Payment.name) private paymentModel: Model<Payment>,
         private configService: ConfigService,
+        private readonly httpService: HttpService,
     ) { }
 
 
@@ -95,7 +96,9 @@ export class PaymentsService {
                 { orderId },
                 { status: 'SUCCESS' },
             );
-            this.logger.log("success")
+            const method = 'VNPAY'
+            const url = `http://order-service:3000/orders/${orderId}/${method}`
+            await this.httpService.get(url);
         } else {
             await this.paymentModel.updateOne(
                 { orderId },
@@ -103,10 +106,7 @@ export class PaymentsService {
             );
             this.logger.log("failed")
         }
-        const method = 'VNPAY'
 
-        const url = `http://order-service:3000/orders/${orderId}/${method}`
-        await axios.post(url)
         return { responseCode }
     }
 
@@ -192,8 +192,9 @@ export class PaymentsService {
                 { orderId },
                 { status: 'SUCCESS' },
             );
-
-            this.logger.log("success")
+            const method = 'MOMO'
+            const url = `http://order-service:3000/orders/${orderId}/${method}`
+            await this.httpService.get(url);
         } else {
             await this.paymentModel.updateOne(
                 { orderId },
@@ -201,11 +202,6 @@ export class PaymentsService {
             );
             this.logger.log("failed")
         }
-
-        const method = 'MOMO'
-        const url = `http://order-service:3000/orders/${orderId}/${method}`
-        await axios.post(url)
-
         return { resultCode };
     }
 

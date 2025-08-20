@@ -11,7 +11,6 @@ import { AddToCartDto } from './dto/add-to-cart.dto';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { RedisService } from '@app/common-auth';
-import axios from 'axios';
 
 interface ProductVariant {
   _id: string;
@@ -35,6 +34,7 @@ export class CartsService {
 
   constructor(
     @InjectModel(Cart.name) private cartModel: Model<CartDocument>,
+    private readonly httpService: HttpService,
     private readonly redisService: RedisService,
   ) { }
 
@@ -46,15 +46,15 @@ export class CartsService {
       this.logger.log(`No cart found for user ${userId}. Creating a new one.`);
       cart = new this.cartModel({
         userId: objectUserId,
-        items: [], 
+        items: [],
       });
     }
 
     const updatedItems = await Promise.all(
       cart.items.map(async (item) => {
         try {
-          const url = `http://product-service:3000/products/${item.productId}`;
-          const res = await axios.get(url);
+          const Url = `http://product-service:3000/products/${item.productId}`;
+          const res = await firstValueFrom(this.httpService.get(Url));
           const productData = res.data;
 
           return {
@@ -86,7 +86,7 @@ export class CartsService {
 
     let response;
     try {
-      response = await axios.get(productUrl);
+      response = await firstValueFrom(this.httpService.get(productUrl));
     } catch (err) {
       this.logger.error(
         `Failed to fetch product ${productId} from product-service: ${err}`,
@@ -132,7 +132,7 @@ export class CartsService {
     const products = await Promise.all(
       cart.items.map(async (item) => {
         const url = `http://product-service:3000/products/${item.productId}`;
-        const res = await axios.get(url);
+        const res = await firstValueFrom(this.httpService.get(url));
         const product = res.data;
 
         const variant = product.variants.find(v => v._id === item.variantId);
