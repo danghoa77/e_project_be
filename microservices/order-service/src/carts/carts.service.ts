@@ -140,7 +140,7 @@ export class CartsService {
         if (!variant) {
           throw new Error(`Variant ${item.variantId} not found for product ${product._id}`);
         }
-
+        this.logger.log(variant);
         return {
           productId: product._id,
           name: product.name,
@@ -148,7 +148,7 @@ export class CartsService {
           imageUrl: product.images[0]?.url,
           size: variant.size,
           color: variant.color,
-          price: variant.price,
+          price: variant.salePrice ?? variant.price,
           quantity: item.quantity,
           total: variant.price * item.quantity
         };
@@ -319,5 +319,4 @@ export class CartsService {
     }
   }
 
-  // nếu cần, tao có thể implement validateCartStock(...) để check toàn bộ giỏ
 }

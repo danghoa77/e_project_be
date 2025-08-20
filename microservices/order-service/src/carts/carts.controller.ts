@@ -23,7 +23,7 @@ export interface AuthenticatedRequest extends Request {
 @Controller('carts')
 @UseGuards(JwtAuthGuard)
 export class CartsController {
-  constructor(private readonly cartsService: CartsService) { }
+  constructor(private readonly cartsService: CartsService) {}
 
   @Get()
   async getCart(@Req() req: AuthenticatedRequest) {

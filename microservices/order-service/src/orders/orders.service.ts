@@ -48,6 +48,21 @@ export class OrdersService {
 
   }
 
+  async changePaymentMethod(orderId: string, paymentMethod: 'CASH' | 'VNPAY' | 'MOMO') {
+    try {
+      const order = await this.orderModel.findById(orderId);
+      if (!order) {
+        throw new Error(`Order with id ${orderId} not found`);
+      }
+      order.paymentMethod = paymentMethod;
+      order.status = 'confirmed';
+      await order.save();
+      await this.redisService.del(`order:${orderId}`);
+      return order;
+    }
+    catch (err) { throw new BadRequestException(err.message) }
+  }
+
   async findOrdersByUserId(userId: string) {
     const cacheKey = `orders:user:${userId}`;
     const cached = await this.redisService.get(cacheKey);

@@ -16,6 +16,7 @@ export class PaymentsService {
     constructor(
         @InjectModel(Payment.name) private paymentModel: Model<Payment>,
         private configService: ConfigService,
+        private readonly httpService: HttpService,
     ) { }
 
 
@@ -36,7 +37,7 @@ export class PaymentsService {
         return sorted;
     }
 
-    async createVnpayPaymentUrl(ipAddr: string, amount: number, orderId: string, userId: string): Promise<string> {
+    async createVnpayPaymentUrl(ipAddr: string, amountUsd: number, orderId: string, userId: string): Promise<string> {
         process.env.TZ = 'Asia/Ho_Chi_Minh';
 
         const tmnCode = this.configService.get<string>('VNPAY_TMN_CODE');
@@ -48,6 +49,10 @@ export class PaymentsService {
             this.logger.error('VNPAY configuration is missing in .env file');
             throw new InternalServerErrorException('VNPAY configuration is missing.');
         }
+
+        const exchangeRate = 25000;
+        const amountVnd = Math.round(amountUsd * exchangeRate);
+
         const createDate = format(new Date(), 'yyyyMMddHHmmss');
 
         let vnp_Params: any = {};
@@ -57,9 +62,9 @@ export class PaymentsService {
         vnp_Params['vnp_Locale'] = 'vn';
         vnp_Params['vnp_CurrCode'] = 'VND';
         vnp_Params['vnp_TxnRef'] = orderId;
-        vnp_Params['vnp_OrderInfo'] = ` ${orderId}`;
+        vnp_Params['vnp_OrderInfo'] = `Thanh toán đơn hàng ${orderId}`;
         vnp_Params['vnp_OrderType'] = 'other';
-        vnp_Params['vnp_Amount'] = amount * 100;
+        vnp_Params['vnp_Amount'] = amountVnd * 100;
         vnp_Params['vnp_IpAddr'] = ipAddr;
         vnp_Params['vnp_CreateDate'] = createDate;
         vnp_Params['vnp_BankCode'] = 'NCB';
@@ -75,24 +80,25 @@ export class PaymentsService {
 
         await this.paymentModel.create({
             orderId,
-            amount,
+            amount: amountVnd,
             userId,
             status: 'PENDING',
             provider: 'VNPAY',
             createdAt: new Date(),
         });
+
         this.logger.log(`Created VNPAY URL: ${vnpUrl}`);
         return vnpUrl;
-
     }
-
     async handleVnpayUrl(responseCode: string, orderId: string) {
         if (responseCode === '00') {
             await this.paymentModel.updateOne(
                 { orderId },
                 { status: 'SUCCESS' },
             );
-            this.logger.log("success")
+            const method = 'VNPAY'
+            const url = `http://order-service:3000/orders/${orderId}/${method}`
+            await this.httpService.get(url);
         } else {
             await this.paymentModel.updateOne(
                 { orderId },
@@ -100,10 +106,11 @@ export class PaymentsService {
             );
             this.logger.log("failed")
         }
+
         return { responseCode }
     }
 
-    async createMomoPayment(orderId: string, amount: number, userId: string) {
+    async createMomoPayment(orderId: string, amountUsd: number, userId: string) {
         const partnerCode = this.configService.get<string>('MOMO_PARTNER_CODE');
         const accessKey = this.configService.get<string>('MOMO_ACCESS_KEY');
         const secretKey = this.configService.get<string>('MOMO_SECRET_KEY');
@@ -114,15 +121,22 @@ export class PaymentsService {
         if (!partnerCode || !accessKey || !secretKey || !endpoint || !redirectUrl || !ipnUrl) {
             throw new InternalServerErrorException('Missing MoMo environment configuration');
         }
-        this.logger.log("UserId", userId);
+
+
+        const exchangeRate = 25000;
+        const amountVnd = Math.round(amountUsd * exchangeRate);
+
+        this.logger.log(`UserId: ${userId}`);
+        this.logger.log(`Amount USD: ${amountUsd}, Amount VND: ${amountVnd}`);
+
         const requestId = `${partnerCode}${Date.now()}`;
         const orderInfo = `Thanh toan don hang ${orderId}`;
         const requestType = 'payWithMethod';
         const extraData = '';
 
-        // Signature based on docs
+        // Signature theo docs
         const rawSignature =
-            `accessKey=${accessKey}&amount=${amount}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${partnerCode}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
+            `accessKey=${accessKey}&amount=${amountVnd}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${partnerCode}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
 
         const signature = crypto
             .createHmac('sha256', secretKey)
@@ -134,7 +148,7 @@ export class PaymentsService {
             partnerName: 'Test',
             storeId: 'MomoTestStore',
             requestId,
-            amount: String(amount),
+            amount: String(amountVnd),
             orderId,
             orderInfo,
             redirectUrl,
@@ -146,7 +160,6 @@ export class PaymentsService {
             signature,
         };
 
-
         try {
             const response = await axios.post(endpoint, requestBody, {
                 headers: { 'Content-Type': 'application/json' },
@@ -156,14 +169,14 @@ export class PaymentsService {
 
             await this.paymentModel.create({
                 orderId,
-                amount,
+                amount: amountVnd,
                 userId,
                 status: 'PENDING',
                 provider: 'MOMO',
                 createdAt: new Date(),
             });
-            const url = response.data.payUrl;
 
+            const url = response.data.payUrl;
             return url;
         } catch (error) {
             const errData = error.response?.data ? JSON.stringify(error.response.data) : error.message;
@@ -179,8 +192,9 @@ export class PaymentsService {
                 { orderId },
                 { status: 'SUCCESS' },
             );
-
-            this.logger.log("success")
+            const method = 'MOMO'
+            const url = `http://order-service:3000/orders/${orderId}/${method}`
+            await this.httpService.get(url);
         } else {
             await this.paymentModel.updateOne(
                 { orderId },
