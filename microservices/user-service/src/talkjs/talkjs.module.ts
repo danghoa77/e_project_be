@@ -2,10 +2,12 @@
 import { Module } from '@nestjs/common';
 import { TalkjsController } from './talkjs.controller';
 import { TalkjsModule as CommonTalkjsModule } from '@app/common-auth';
-
+import {
+  TalkjsService
+} from '@app/common-auth';
 @Module({
   imports: [CommonTalkjsModule],
   controllers: [TalkjsController],
-  providers: [],
+  providers: [TalkjsService],
 })
-export class TalkjsLocalModule {}
+export class TalkjsLocalModule { }

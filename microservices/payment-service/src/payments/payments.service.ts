@@ -1,4 +1,4 @@
-import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, Logger, InternalServerErrorException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Payment } from '../schemas/payment.schema';
@@ -96,9 +96,12 @@ export class PaymentsService {
                 { orderId },
                 { status: 'SUCCESS' },
             );
-            const method = 'VNPAY'
-            const url = `http://order-service:3000/orders/${orderId}/${method}`
-            await this.httpService.get(url);
+            try {
+                const method = 'VNPAY'
+                const url = `http://order-service:3000/orders/${orderId}/${method}`
+                await this.httpService.post(url);
+            }
+            catch (err: any) { throw new BadRequestException(err.message) }
         } else {
             await this.paymentModel.updateOne(
                 { orderId },
@@ -192,9 +195,13 @@ export class PaymentsService {
                 { orderId },
                 { status: 'SUCCESS' },
             );
-            const method = 'MOMO'
-            const url = `http://order-service:3000/orders/${orderId}/${method}`
-            await this.httpService.get(url);
+            try {
+                const method = 'MOMO'
+                const url = `http://order-service:3000/orders/${orderId}/${method}`
+                await this.httpService.post(url);
+            } catch (err: any) {
+                throw new BadRequestException(err.message)
+            }
         } else {
             await this.paymentModel.updateOne(
                 { orderId },
@@ -205,9 +212,13 @@ export class PaymentsService {
         return { resultCode };
     }
 
-    async getPaymentByOrderId(orderId: string): Promise<Payment | null> {
-        return this.paymentModel.findOne({ orderId: new Types.ObjectId(orderId) }).exec();
+    async getPaymentByOrderId(role: string, orderId?: string): Promise<Payment[] | Payment | null> {
+        if (role === "admin") {
+            return this.paymentModel.find().exec();
+        }
+        return this.paymentModel.findOne({ orderId }).exec();
     }
+
 
     async deleteAllPayments(): Promise<{ acknowledged: boolean; deletedCount: number }> {
         try {

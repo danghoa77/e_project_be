@@ -60,15 +60,19 @@ export class PaymentsController {
 
 
 
-    @Get(':orderId')
+    @Post('/getPayment')
     @UseGuards(JwtAuthGuard)
-    async getPaymentStatus(@Req() req: any, @Param('orderId') orderId: string) {
-        const payment = await this.paymentsService.getPaymentByOrderId(orderId);
-        if (!payment || (req.user.role !== 'admin' && payment.userId.toHexString() !== req.user.userId)) {
+    async getPaymentStatus(@Req() req: any, @Body('orderId') orderId?: string) {
+        const payment = await this.paymentsService.getPaymentByOrderId(req.user.role, orderId);
+
+        if (!payment) {
             throw new NotFoundException('Payment information does not exist or you do not have access.');
         }
+
         return payment;
     }
+
+
 
     @Delete('all')
     @UseGuards(JwtAuthGuard, RolesGuard)
