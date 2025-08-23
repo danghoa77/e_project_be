@@ -148,6 +148,7 @@ export class TalkjsService {
       );
 
       return {
+        conversationId: conversationId,
         conversation: response.data,
         messages: messagesResponse.data,
       }

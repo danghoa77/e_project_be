@@ -29,7 +29,6 @@ interface AuthenticatedUser {
 }
 
 @Controller('talkjs')
-@UseGuards(JwtAuthGuard, RolesGuard)
 export class TalkjsController {
   constructor(private readonly talkjsCommonService: TalkjsService) { }
   private readonly logger = new Logger(TalkjsController.name);
@@ -47,7 +46,7 @@ export class TalkjsController {
       appId: this.talkjsCommonService['talkjsAppId'],
     };
   }
-
+  @UseGuards(JwtAuthGuard)
   @Post('conversations')
   async createOrGetConversation(
     @Body() createConversationDto: CreateTalkjsConversationDto,
@@ -91,6 +90,7 @@ export class TalkjsController {
     );
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post('messages')
   async sendMessage(
     @Body() sendMessageDto: SendTalkjsMessageDto,
@@ -105,6 +105,8 @@ export class TalkjsController {
     );
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Role('admin')
   @Get('conversations/me')
   async getMyConversations(
     @Req() req: { user: AuthenticatedUser },
@@ -113,6 +115,8 @@ export class TalkjsController {
     return this.talkjsCommonService.listUserConversations(userId);
   }
 
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Delete('conversations/:conversationId')
   @Role('admin')
   @HttpCode(HttpStatus.NO_CONTENT)
