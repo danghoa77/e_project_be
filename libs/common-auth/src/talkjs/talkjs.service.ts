@@ -4,7 +4,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import * as jwt from 'jsonwebtoken';
 
 interface TalkjsUserAttributes {
@@ -21,6 +21,11 @@ interface TalkjsUserAttributes {
     _id?: string;
   }>;
   custom?: { [key: string]: any };
+}
+
+
+interface TalkjsMessagesResponse {
+  data: { id: string; text: string; sender: string }[];
 }
 
 @Injectable()
@@ -46,7 +51,7 @@ export class TalkjsService {
     this.talkjsSecretKey = secretKey;
   }
 
-  async upsertUser(user: TalkjsUserAttributes): Promise<any> {
+  async upsertUser(user: TalkjsUserAttributes): Promise<unknown> {
     const talkjsUserId = user._id;
     const url = `https://api.talkjs.com/v1/${this.talkjsAppId}/users/${talkjsUserId}`;
 
@@ -63,7 +68,7 @@ export class TalkjsService {
     };
 
     try {
-      const response = await axios.put(url, userData, {
+      const response: AxiosResponse<unknown> = await axios.put(url, userData, {
         headers: {
           Authorization: `Bearer ${this.talkjsSecretKey}`,
           'Content-Type': 'application/json',
@@ -118,7 +123,11 @@ export class TalkjsService {
     conversationId: string,
     participantIds: string[],
     subject?: string,
-  ): Promise<any> {
+  ): Promise<{
+    conversationId: string;
+    conversation: unknown;
+    messages: TalkjsMessagesResponse;
+  }> {
     const url = `https://api.talkjs.com/v1/${this.talkjsAppId}/conversations/${conversationId}`;
     const conversationData = {
       participants: participantIds,
@@ -126,22 +135,27 @@ export class TalkjsService {
     };
 
     try {
-      const response = await axios.put(url, conversationData, {
-        headers: {
-          Authorization: `Bearer ${this.talkjsSecretKey}`,
-          'Content-Type': 'application/json',
+      const response: AxiosResponse<unknown> = await axios.put(
+        url,
+        conversationData,
+        {
+          headers: {
+            Authorization: `Bearer ${this.talkjsSecretKey}`,
+            'Content-Type': 'application/json',
+          },
         },
-      });
+      );
       this.logger.log(
         `TalkJS conversation '${conversationId}' managed successfully.`,
       );
 
       const messagesUrl = `${url}/messages`;
-      const messagesResponse = await axios.get(messagesUrl, {
-        headers: {
-          Authorization: `Bearer ${this.talkjsSecretKey}`,
-        },
-      });
+      const messagesResponse: AxiosResponse<TalkjsMessagesResponse> =
+        await axios.get(messagesUrl, {
+          headers: {
+            Authorization: `Bearer ${this.talkjsSecretKey}`,
+          },
+        });
 
       this.logger.log(
         `Fetched ${messagesResponse.data.data.length} messages from conversation '${conversationId}'.`,
@@ -151,7 +165,7 @@ export class TalkjsService {
         conversationId: conversationId,
         conversation: response.data,
         messages: messagesResponse.data,
-      }
+      };
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -174,7 +188,7 @@ export class TalkjsService {
     senderId: string,
     message: string,
     type: string = 'text',
-  ): Promise<any> {
+  ): Promise<unknown> {
     const url = `https://api.talkjs.com/v1/${this.talkjsAppId}/conversations/${conversationId}/messages`;
 
     const payload = [
@@ -186,7 +200,7 @@ export class TalkjsService {
     ];
 
     try {
-      const response = await axios.post(url, payload, {
+      const response: AxiosResponse<unknown> = await axios.post(url, payload, {
         headers: {
           Authorization: `Bearer ${this.talkjsSecretKey}`,
           'Content-Type': 'application/json',
@@ -213,11 +227,11 @@ export class TalkjsService {
     }
   }
 
-  async listUserConversations(userId: string): Promise<any> {
+  async listUserConversations(userId: string): Promise<unknown> {
     const url = `https://api.talkjs.com/v1/${this.talkjsAppId}/users/${userId}/conversations`;
 
     try {
-      const response = await axios.get(url, {
+      const response: AxiosResponse<unknown> = await axios.get(url, {
         headers: {
           Authorization: `Bearer ${this.talkjsSecretKey}`,
         },
