@@ -135,7 +135,22 @@ export class TalkjsService {
       this.logger.log(
         `TalkJS conversation '${conversationId}' managed successfully.`,
       );
-      return response.data;
+
+      const messagesUrl = `${url}/messages`;
+      const messagesResponse = await axios.get(messagesUrl, {
+        headers: {
+          Authorization: `Bearer ${this.talkjsSecretKey}`,
+        },
+      });
+
+      this.logger.log(
+        `Fetched ${messagesResponse.data.data.length} messages from conversation '${conversationId}'.`,
+      );
+
+      return {
+        conversation: response.data,
+        messages: messagesResponse.data,
+      }
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);

@@ -60,6 +60,7 @@ export class CartsService {
           return {
             ...(item as any).toObject?.() ?? item,
             price: productData.price,
+            salePrice: productData.salePrice,
           };
 
         } catch (err) {
@@ -67,6 +68,7 @@ export class CartsService {
           return {
             ...(item as any).toObject?.() ?? item,
             price: null,
+            salePrice: null
           };
         }
       })
@@ -148,7 +150,7 @@ export class CartsService {
           imageUrl: product.images[0]?.url,
           size: variant.size,
           color: variant.color,
-          price: variant.salePrice ?? variant.price,
+          price: variant.salePrice && variant.salePrice > 0 ? variant.salePrice : variant.price,
           quantity: item.quantity,
           total: variant.price * item.quantity
         };
