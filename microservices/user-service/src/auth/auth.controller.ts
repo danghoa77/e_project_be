@@ -32,36 +32,27 @@ export class AuthController {
     private readonly logger: Logger,
   ) { }
 
-  /**
-   * Endpoint cho Mobile hoặc bất kỳ client nào có idToken
-   */
   @Post('google/token')
   @HttpCode(HttpStatus.OK)
   async googleLoginWithToken(@Body() googleAuthDto: GoogleAuthDto) {
-    const { accessToken } = await this.authService.loginWithGoogleToken(googleAuthDto.idToken);
-    return { access_token: accessToken };
+    const { access_token } = await this.authService.loginWithGoogleToken(googleAuthDto.idToken);
+    return { access_token: access_token };
   }
 
-  /**
-   * Endpoint bắt đầu luồng Oauth2 cho web
-   */
+
   @Get('google')
   @UseGuards(AuthGuard('google'))
   async googleAuth() { /* Passport handles the redirect */ }
-
-  /**
-   * Endpoint callback sau khi user xác thực với Google
-   */
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
   async googleAuthRedirect(@Req() req: Request, @Res() res: Response) {
     const googleUser = req.user as GooglePassportUser;
 
     try {
-      const { accessToken } = await this.authService.validateGooglePassportUser(googleUser);
+      const { access_token } = await this.authService.validateGooglePassportUser(googleUser);
 
       const frontendUrl = this.configService.get<string>('FRONTEND_URL');
-      const redirectUrl = `${frontendUrl}/auth/callback?token=${accessToken}`;
+      const redirectUrl = `${frontendUrl}/auth/callback?token=${access_token}`;
 
       this.logger.log(`Redirecting to: ${redirectUrl}`);
       res.redirect(redirectUrl);

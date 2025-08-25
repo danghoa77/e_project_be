@@ -34,7 +34,7 @@ export class User {
   @Prop({ required: true, select: false })
   password: string;
 
-  @Prop({ required: false })
+  @Prop({ required: true })
   name: string;
 
   @Prop({ required: false })

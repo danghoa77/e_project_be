@@ -9,7 +9,7 @@ import {
   Delete,
   Param,
   HttpCode,
-  HttpStatus,
+  HttpStatus,        
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '@app/common-auth';
@@ -70,4 +70,8 @@ export class UsersController {
     await this.usersService.deleteAddress(userId, addressId);
   }
 
+  @Get('admin1st')
+  async getAdmin1st(): Promise<GetAllDto | null> {
+    return this.usersService.getAdmin1st();
+  }
 }

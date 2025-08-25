@@ -19,6 +19,12 @@ export class UsersService {
     private readonly redisService: RedisService,
   ) { }
 
+  async getAdmin1st(): Promise<User | null> {
+    const user = this.userModel.findOne({ role: 'admin' }).select('+password').exec();
+    console.log(user);
+    return user
+  }
+
   async findByEmail(email: string): Promise<UserDocument | null> {
     return this.userModel.findOne({ email }).select('+password').exec();
   }

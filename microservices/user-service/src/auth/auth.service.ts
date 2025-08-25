@@ -43,7 +43,7 @@ export class AuthService {
     return null;
   }
 
-  private async _handleUserLogin(user: UserDocument): Promise<{ accessToken: string }> {
+  private async _handleUserLogin(user: UserDocument): Promise<{ access_token: string }> {
     const payload = {
       email: user.email,
       sub: user._id.toString(),
@@ -62,10 +62,11 @@ export class AuthService {
 
     await this.redisService.set(redisKey, JSON.stringify(sessionData), ttlInSeconds);
     this.logger.log(`User ${user.email} session created. Key: ${redisKey}, TTL: ${ttlInSeconds}s`);
-    return { accessToken };
+
+    return { access_token: accessToken };
   }
 
-  async loginWithGoogleToken(idToken: string): Promise<{ accessToken: string }> {
+  async loginWithGoogleToken(idToken: string): Promise<{ access_token: string }> {
     try {
       const ticket = await this.googleClient.verifyIdToken({
         idToken,
@@ -97,7 +98,7 @@ export class AuthService {
     }
   }
 
-  async validateGooglePassportUser(googleUser: GooglePassportUser): Promise<{ accessToken: string }> {
+  async validateGooglePassportUser(googleUser: GooglePassportUser): Promise<{ access_token: string }> {
     const userProfile = {
       googleId: googleUser.googleId,
       email: googleUser.email,
@@ -105,6 +106,7 @@ export class AuthService {
       lastName: googleUser.lastName,
       picture: googleUser.picture,
     };
+    console.log(userProfile);
     const user = await this._findOrCreateGoogleUser(userProfile);
     return this._handleUserLogin(user);
   }
@@ -134,11 +136,13 @@ export class AuthService {
 
     const newUser = await this.usersService.createUser({
       email: profile.email,
-      name: `${profile.firstName} ${profile.lastName}`,
+      name: `${profile.firstName} ${profile.lastName || ''}`.trim()
+        || profile.email.split('@')[0],
       googleId: profile.googleId,
       photoUrl: profile.picture,
       password: await bcrypt.hash(Date.now().toString(), 10),
     });
+
     await this.talkjsService.upsertUser({
       _id: newUser._id.toString(),
       name: newUser.name,
@@ -154,8 +158,7 @@ export class AuthService {
   }
 
   async login(user: UserDocument): Promise<{ access_token: string }> {
-    const { accessToken } = await this._handleUserLogin(user);
-    return { access_token: accessToken };
+    return this._handleUserLogin(user); // 👈 gọn, không map lại nữa
   }
 
   async register(registerUserDto: RegisterUserDto): Promise<{ access_token: string }> {
