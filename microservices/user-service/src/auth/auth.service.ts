@@ -134,7 +134,7 @@ export class AuthService {
 
     const newUser = await this.usersService.createUser({
       email: profile.email,
-      name: `${profile.firstName} ${profile.lastName || ''}`.trim(),
+      name: `${profile.firstName} ${profile.lastName}`,
       googleId: profile.googleId,
       photoUrl: profile.picture,
       password: await bcrypt.hash(Date.now().toString(), 10),
