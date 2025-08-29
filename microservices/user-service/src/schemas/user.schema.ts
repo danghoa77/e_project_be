@@ -3,7 +3,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { HydratedDocument } from 'mongoose';
 
 export type UserDocument = HydratedDocument<User>;
-// Address sẽ là một sub-document (schema con)
+
 @Schema()
 export class Address {
   @Prop({ type: mongoose.Schema.Types.ObjectId, auto: true })
@@ -31,13 +31,13 @@ export class User {
   @Prop({ required: true, unique: true, trim: true })
   email: string;
 
-  @Prop({ required: true, select: false })
+  @Prop()
   password: string;
 
-  @Prop({ required: false })
+  @Prop()
   name: string;
 
-  @Prop({ required: false })
+  @Prop()
   phone: string;
 
   @Prop({ enum: ['customer', 'admin'], default: 'customer' })

@@ -21,7 +21,8 @@ import {
 } from '@app/common-auth';
 import { CreateTalkjsConversationDto } from './dto/create-talkjs-conversation.dto';
 import { SendTalkjsMessageDto } from './dto/send-talkjs-message.dto';
-
+import { HttpService } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
 interface AuthenticatedUser {
   userId: string;
   email: string;
@@ -32,7 +33,7 @@ interface AuthenticatedUser {
 export class TalkjsController {
   constructor(private readonly talkjsCommonService: TalkjsService) { }
   private readonly logger = new Logger(TalkjsController.name);
-
+  private readonly httpService = new HttpService();
   @Post('token')
   getTalkjsToken(@Req() req: { user: AuthenticatedUser }) {
     const { userId, email, role } = req.user;
@@ -46,13 +47,14 @@ export class TalkjsController {
       appId: this.talkjsCommonService['talkjsAppId'],
     };
   }
+
+
   @UseGuards(JwtAuthGuard)
   @Post('conversations')
   async createOrGetConversation(
     @Body() createConversationDto: CreateTalkjsConversationDto,
     @Req() req: { user: AuthenticatedUser },
   ): Promise<any> {
-    this.logger.log('👉 req.user:', req.user);
     const { targetCustomerId } = createConversationDto;
     const currentUser = req.user;
 
@@ -60,16 +62,19 @@ export class TalkjsController {
     let conversationId: string;
 
     if (currentUser.role === 'customer') {
-      const adminId = '68a986c7b2b29620c397b302'; //should processing get adminID with 1st on db
-      this.logger.log('adminId value:', adminId, typeof adminId);
-      this.logger.log('targetCustomerId value:', currentUser.userId);
-      if (!adminId) {
-        throw new BadRequestException(
-          'Admin ID is required for a customer to start a conversation.',
-        );
+      try {
+        const url = 'http://localhost:3000/users/getAdmin1st';
+        const response = await firstValueFrom(this.httpService.get<string>(url));
+        const adminId = response.data;
+        if (!adminId) {
+          throw new BadRequestException(
+            'Admin ID is required for a customer to start a conversation.',
+          );
+        }
+        participantIds = [currentUser.userId, adminId];
+        conversationId = `customer-${currentUser.userId}-admin-${adminId}`;
       }
-      participantIds = [currentUser.userId, adminId];
-      conversationId = `customer-${currentUser.userId}-admin-${adminId}`;
+      catch (err: any) { throw new BadRequestException(err.message) }
     } else if (currentUser.role === 'admin') {
       if (!targetCustomerId) {
         throw new BadRequestException(
@@ -81,9 +86,9 @@ export class TalkjsController {
     } else {
       throw new UnauthorizedException('Invalid user role for chat.');
     }
-    this.logger.log(
-      `Creating or getting conversation with ID: ${conversationId} for participants: ${participantIds.join(', ')}`,
-    );
+    // this.logger.log(
+    //   `Creating or getting conversation with ID: ${conversationId} for participants: ${participantIds.join(', ')}`,
+    // );
     return this.talkjsCommonService.getOrCreateConversation(
       conversationId,
       participantIds,

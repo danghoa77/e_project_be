@@ -5,7 +5,7 @@ import { UpdateStockItemDto } from './update-stock-item.dto';
 
 export class BulkUpdateStockDto {
     @IsArray()
-    @ValidateNested({ each: true }) // Kiểm tra từng item trong mảng
-    @Type(() => UpdateStockItemDto) //  Chuyển đổi object thường thành class DTO
+    @ValidateNested({ each: true }) //check each item in array
+    @Type(() => UpdateStockItemDto) 
     items: UpdateStockItemDto[];
 }

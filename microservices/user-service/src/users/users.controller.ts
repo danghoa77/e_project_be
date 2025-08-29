@@ -15,7 +15,7 @@ import { UsersService } from './users.service';
 import { JwtAuthGuard } from '@app/common-auth';
 import { GetUserDto } from './dto/get-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { GetAllDto } from './dto/get-all.dto';
+import { UserDocument } from '../schemas/user.schema';
 
 interface AuthenticatedRequest extends Request {
   user: {
@@ -48,7 +48,7 @@ export class UsersController {
   }
 
   @Get('all')
-  async getAllUsers(): Promise<GetAllDto[]> {
+  async getAllUsers(): Promise<UserDocument[]> {
     return this.usersService.findAll();
   }
 
@@ -70,4 +70,8 @@ export class UsersController {
     await this.usersService.deleteAddress(userId, addressId);
   }
 
+  @Get('admin1st')
+  async getAdmin1st() {
+    return this.usersService.getAdmin1st();
+  }
 }

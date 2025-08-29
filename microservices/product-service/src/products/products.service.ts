@@ -19,14 +19,7 @@ export class ProductsService {
         private cloudinaryService: CloudinaryService,
         private redisService: RedisService,
     ) { }
-    private async invalidateCache() {
-        await this.redisService.set('products:cacheInvalidated', 'true', 60);
-    }
 
-    private async isCacheInvalidated(): Promise<boolean> {
-        const flag = await this.redisService.get('products:cacheInvalidated');
-        return flag === 'true';
-    }
 
     async create(createProductDto: CreateProductDto, files: Array<Express.Multer.File>): Promise<Product> {
         const newProduct = new this.productModel(createProductDto);
@@ -40,7 +33,6 @@ export class ProductsService {
             }));
         }
         const createdProduct = await newProduct.save();
-        await this.invalidateCache();
         this.logger.log(`Created product: ${createdProduct}`);
         await this.redisService.del('products:all');
         return createdProduct;
@@ -77,72 +69,30 @@ export class ProductsService {
     }
 
     async decreaseStockForOrder(items: UpdateStockItemDto[]): Promise<{ message: string }> {
-        const MAX_RETRIES = 3;
+        for (const { productId, variantId, quantity } of items) {
+            const res = await this.productModel.updateOne(
+                { _id: productId, "variants._id": variantId, "variants.stock": { $gte: quantity } },
+                { $inc: { "variants.$.stock": -quantity } }
+            );
 
-        for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-            const session = await this.connection.startSession();
-            session.startTransaction();
-
-            try {
-                for (const item of items) {
-                    const res = await this.productModel.updateOne(
-                        {
-                            _id: item.productId,
-                            "variants._id": item.variantId,
-                            "variants.stock": { $gte: item.quantity },
-                        },
-                        {
-                            $inc: { "variants.$.stock": -item.quantity },
-                        },
-                        { session }
-                    );
-
-                    if (res.modifiedCount === 0) {
-                        throw new BadRequestException(
-                            `Insufficient stock for this product`
-                        );
-                    }
-                }
-
-                await session.commitTransaction();
-                session.endSession();
-                this.logger.log(`Stock decreased successfully. Transaction committed.`);
-                return { message: "Stock updated successfully" };
-
-            } catch (error: any) {
-                await session.abortTransaction();
-                session.endSession();
-
-                if (error.errorLabels?.includes("TransientTransactionError") && attempt < MAX_RETRIES) {
-                    this.logger.warn(`Write conflict detected. Retrying attempt ${attempt}/${MAX_RETRIES}...`);
-                    await new Promise(res => setTimeout(res, 100 * attempt));
-                    continue;
-                }
-
-                this.logger.error(`Failed to decrease stock. Transaction aborted.`, error.stack);
-                throw error;
+            if (!res.modifiedCount) {
+                throw new BadRequestException(`Insufficient stock for product ${productId}`);
             }
         }
-
-        throw new Error("Failed to decrease stock after multiple retries");
+        await this.redisService.del('products:all');
+        return { message: "Stock updated successfully" };
     }
-
 
     async findAll(query: ProductQueryDto): Promise<{ products: Product[]; total: number }> {
         const { category, priceMin, priceMax, size, limit = 10, page = 1, sortBy } = query;
 
-        const cacheInvalidated = await this.isCacheInvalidated();
         const cacheKey = `products:${JSON.stringify(query)}`;
 
-        if (!cacheInvalidated) {
-            const cachedProducts = await this.redisService.get(cacheKey);
-            if (cachedProducts) {
-                this.logger.log('📦 Returning products from Redis cache');
-                const parsed = JSON.parse(cachedProducts);
-                return { products: parsed.products, total: parsed.total };
-            }
-        } else {
-            this.logger.log('🚨 Cache invalidated → fetching from DB');
+        const cachedProducts = await this.redisService.get(cacheKey);
+        if (cachedProducts) {
+            this.logger.log('📦 Returning products from Redis cache');
+            const parsed = JSON.parse(cachedProducts);
+            return { products: parsed.products, total: parsed.total };
         }
 
         // Build filter
@@ -171,10 +121,11 @@ export class ProductsService {
         this.logger.log(` DB queried, cached ${products.length} products`);
         return { products, total };
     }
+
+
     async findOne(id: string): Promise<Product> {
         const cachedProduct = await this.redisService.get(`product:${id}`);
         if (cachedProduct) {
-            console.log('Product from Redis cache');
             return JSON.parse(cachedProduct);
         }
 
@@ -182,8 +133,7 @@ export class ProductsService {
         if (!product) {
             throw new NotFoundException('Product does not exist.');
         }
-        this.logger.log(`Found product: ${product}`);
-        await this.redisService.set(`product:${id}`, JSON.stringify(product), 60 * 5); // Cache 5 phút
+        await this.redisService.set(`product:${id}`, JSON.stringify(product), 60 * 5);
         return product;
     }
 
@@ -213,14 +163,12 @@ export class ProductsService {
             product.images.push(...newImages);
         }
 
-
-        delete updateProductDto.deletedImages;
+        delete updateProductDto.deletedImages; //only variant exist
         delete updateProductDto.images;
 
         Object.assign(product, updateProductDto);
 
         const updated = await product.save();
-        await this.invalidateCache();
         await this.redisService.del(`product:${id}`);
         await this.redisService.del('products:all');
 
@@ -230,10 +178,8 @@ export class ProductsService {
     async remove(id: string): Promise<void> {
         const product = await this.productModel.findById(id).exec();
         if (!product) {
-            ``
             throw new NotFoundException('Product does not exist.');
         }
-
 
         if (product.images && product.images.length > 0) {
             const deletePromises = product.images.map(img => this.cloudinaryService.deleteImage(img.cloudinaryId));
@@ -241,8 +187,6 @@ export class ProductsService {
         }
 
         await this.productModel.deleteOne({ _id: id }).exec();
-        this.logger.log(`Deleted product: ${id}`);
-        await this.invalidateCache();
         await this.redisService.del(`product:${id}`);
         await this.redisService.del('products:all');
     }

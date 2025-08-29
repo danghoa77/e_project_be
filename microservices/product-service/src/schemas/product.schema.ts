@@ -2,7 +2,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 
-// Định nghĩa Image Sub-document
+
 @Schema({ _id: false })
 export class Image {
     @Prop({ type: String, required: true })
@@ -14,8 +14,8 @@ export class Image {
 
 const ImageSchema = SchemaFactory.createForClass(Image);
 
-// Định nghĩa Variant Sub-document
-@Schema({ _id: true }) // Tạo _id riêng cho mỗi variant
+
+@Schema({ _id: true }) //each field id will be a string
 export class Variant {
     _id: Types.ObjectId;
 
@@ -37,7 +37,7 @@ export class Variant {
 
 const VariantSchema = SchemaFactory.createForClass(Variant);
 
-// Định nghĩa Product Schema
+
 @Schema({
     timestamps: true,
     collection: 'products',
@@ -61,7 +61,5 @@ export class Product extends Document {
 
 export const ProductSchema = SchemaFactory.createForClass(Product);
 
-
-// ProductSchema.index({ category: 1 });
 ProductSchema.index({ 'variants.price': 1 });
 ProductSchema.index({ 'variants.size': 1 });
