@@ -57,11 +57,8 @@ export class AuthService {
       role: user.role,
     };
 
-    const ttlInSeconds = 3600;
-    const redisKey = `session:${user._id.toString()}`;
-
-    await this.redisService.set(redisKey, JSON.stringify(sessionData), ttlInSeconds);
-    this.logger.log(`User ${user.email} session created. Key: ${redisKey}, TTL: ${ttlInSeconds}s`);
+    const res = await this.redisService.set(`session:${user._id.toString()}`, JSON.stringify(sessionData), 3600);
+    this.logger.log(`User ${user.email}`, res);
 
     return { access_token: accessToken };
   }
@@ -158,7 +155,7 @@ export class AuthService {
   }
 
   async login(user: UserDocument): Promise<{ access_token: string }> {
-    return this._handleUserLogin(user); // 👈 gọn, không map lại nữa
+    return this._handleUserLogin(user);
   }
 
   async register(registerUserDto: RegisterUserDto): Promise<{ access_token: string }> {

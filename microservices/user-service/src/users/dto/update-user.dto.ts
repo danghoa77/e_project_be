@@ -8,7 +8,7 @@ import {
   IsBoolean,
   MaxLength,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 class AddressDto {
 
@@ -28,10 +28,10 @@ class AddressDto {
 }
 
 export class UpdateUserDto {
+
   @IsString()
   @IsOptional()
-  @MaxLength(50)
-  name?: string;
+  password?: string;
 
   @IsPhoneNumber('VN')
   @IsOptional()

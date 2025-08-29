@@ -21,7 +21,6 @@ import { AuthGuard } from '@nestjs/passport';
 import { Request, Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { UserDocument } from '../schemas/user.schema';
-import { GoogleAuthDto } from './dto/google-auth.dto';
 import { AuthenticatedUser, GooglePassportUser } from './dto/auth.types';
 
 @Controller('auth')
@@ -34,8 +33,8 @@ export class AuthController {
 
   @Post('google/token')
   @HttpCode(HttpStatus.OK)
-  async googleLoginWithToken(@Body() googleAuthDto: GoogleAuthDto) {
-    const { access_token } = await this.authService.loginWithGoogleToken(googleAuthDto.idToken);
+  async googleLoginWithToken(@Body() idToken: string) {
+    const { access_token } = await this.authService.loginWithGoogleToken(idToken);
     return { access_token: access_token };
   }
 

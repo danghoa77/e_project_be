@@ -48,13 +48,11 @@ export class UsersService {
     return savedUser;
   }
 
-  async findUserById(id: string, forceRefresh = false): Promise<GetUserDto> {
-    if (!forceRefresh) {
-      const cachedUser = await this.redisService.get(`user:${id}`);
-      if (cachedUser) {
-        console.log('User data from Redis cache');
-        return plainToClass(GetUserDto, JSON.parse(cachedUser));
-      }
+  async findUserById(id: string): Promise<GetUserDto> {
+    const cachedUser = await this.redisService.get(`user:${id}`);
+    if (cachedUser) {
+      console.log('User data from Redis cache');
+      return plainToClass(GetUserDto, JSON.parse(cachedUser));
     }
 
     const user = await this.userModel.findById(id).exec();
@@ -67,47 +65,31 @@ export class UsersService {
     return userDto;
   }
 
-  async updateProfile(userId: string, updateUserDto: UpdateUserDto): Promise<User> {
+  async updateProfile(userId: string, dto: UpdateUserDto): Promise<User> {
     const user = await this.userModel.findById(userId);
-    if (!user) {
-      throw new NotFoundException(`User with ID ${userId} not found.`);
-    }
-    const { addresses: addressUpdates, ...otherProfileUpdates } = updateUserDto;
-    Object.assign(user, otherProfileUpdates);
-    if (addressUpdates && addressUpdates.length > 0) {
-      const addressInput = addressUpdates[0];
+    if (!user) throw new NotFoundException(`User with ID ${userId} not found.`);
 
-      let currentAddresses = user.toObject().addresses;
+    (["password", "phone"] as const).forEach(field => {
+      if (dto[field]) user[field] = dto[field];
+    });
 
-      if (addressInput._id) {
-        const addressIdToUpdate = addressInput._id.toString();
-        let isAddressFound = false;
+    if (dto.addresses?.[0]) {
+      const input = dto.addresses[0];
+      const addresses = user.toObject().addresses || [];
 
-        const updatedAddresses = currentAddresses.map(addr => {
-          if (addr._id.toString() === addressIdToUpdate) {
-            isAddressFound = true;
-            return { ...addr, ...addressInput, isDefault: true };
-          }
-          return { ...addr, isDefault: false };
-        });
+      user.addresses = addresses.map(a => ({ ...a, isDefault: false }));
 
-        if (!isAddressFound) {
-          throw new BadRequestException(`Address with ID ${addressIdToUpdate} not found in user's profile.`);
-        }
-
-        user.addresses = updatedAddresses as any;
-
+      if (input._id) {
+        const id = input._id.toString();
+        const idx = user.addresses.findIndex(a => a._id.toString() === id);
+        if (idx === -1) throw new BadRequestException(`Address with ID ${id} not found.`);
+        user.addresses[idx] = { ...user.addresses[idx], ...input, isDefault: true };
       } else {
-        currentAddresses.forEach(addr => (addr.isDefault = false));
-        const newAddress = {
-          street: addressInput.street,
-          city: addressInput.city,
-          isDefault: true,
-        };
-
-        user.addresses = [...currentAddresses, newAddress] as any;
+        const { _id, ...rest } = input;
+        user.addresses.push({ ...rest, isDefault: true } as any);
       }
     }
+
 
     try {
       const updatedUser = await user.save();
@@ -123,33 +105,16 @@ export class UsersService {
 
   async deleteAddress(userId: string, addressId: string): Promise<void> {
     const user = await this.userModel.findById(userId);
+    if (!user) throw new NotFoundException(`User with ID ${userId} not found.`);
 
-    if (!user) {
-      throw new NotFoundException(`User with ID ${userId} not found.`);
-    }
+    const addr = user.addresses.find(a => a._id.toString() === addressId);
+    if (!addr) throw new NotFoundException(`Address ${addressId} not found.`);
+    if (addr.isDefault) throw new BadRequestException(`Cannot delete default address.`);
 
-    const addressToDelete = user.addresses.find(
-      (addr) => addr._id.toString() === addressId
-    );
-    if (!addressToDelete) {
-      throw new NotFoundException(`Address with ID ${addressId} not found in user's profile.`);
-    }
+    user.addresses = user.addresses.filter(a => a._id.toString() !== addressId);
 
-    let updatedAddresses = user.addresses.filter(
-      (addr) => addr._id.toString() !== addressId
-    );
-    if (addressToDelete.isDefault && updatedAddresses.length > 0) {
-      updatedAddresses[0].isDefault = true;
-    }
-    user.addresses = updatedAddresses;
-
-    try {
-      await user.save();
-      await this.redisService.del(`user:${userId}`);
-    } catch (error) {
-      console.error("Failed to save user after deleting address:", error);
-      throw error;
-    }
+    await user.save();
+    await this.redisService.del(`user:${userId}`);
   }
 
   async deleteUser(userId: string): Promise<void> {
