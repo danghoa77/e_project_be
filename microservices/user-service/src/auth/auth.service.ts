@@ -188,7 +188,14 @@ export class AuthService {
   }
 
   async logout(userId: string): Promise<void> {
-    await this.redisService.del(`session:${userId}`);
-    this.logger.log(`User with ID ${userId} logged out successfully.`);
+    try {
+      await this.redisService.del(`session:${userId}`);
+      await this.redisService.del(`user:${userId}`);
+      this.logger.log(`User with ID ${userId} logged out successfully.`);
+    } catch (err) {
+      this.logger.error(`Failed to logout user with ID ${userId}`, err);
+      throw new InternalServerErrorException('Failed to logout user.');
+    }
   }
+
 }

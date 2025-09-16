@@ -5,7 +5,7 @@ import { UpdateStockItemDto } from './update-stock-item.dto';
 
 export class BulkUpdateStockDto {
     @IsArray()
-    @ValidateNested({ each: true }) //check each item in array
+    @ValidateNested({ each: true }) 
     @Type(() => UpdateStockItemDto) 
     items: UpdateStockItemDto[];
 }
