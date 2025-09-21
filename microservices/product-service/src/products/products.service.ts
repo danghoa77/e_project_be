@@ -1,7 +1,7 @@
 // product-service/src/products/products.service.ts
 import { Injectable, NotFoundException, BadRequestException, Logger, Inject } from '@nestjs/common';
 import { InjectModel, InjectConnection } from '@nestjs/mongoose';
-import { Model, Connection } from 'mongoose';
+import { Model, Connection, Types } from 'mongoose';
 import { Product } from '../schemas/product.schema';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -70,7 +70,7 @@ export class ProductsService {
         await this.updateProductRating(product);
 
         return product.save();
-    }   
+    }
 
     private async updateProductRating(product: Product): Promise<void> {
         const totalReviews = product.ratings.length;
@@ -125,8 +125,15 @@ export class ProductsService {
         }
     }
 
-    async findAllCategories(): Promise<Category[]> {
+    async findCategories(id?: string): Promise<Category[]> {
         try {
+            if (id) {
+                const category = await this.categoryModel.findById(id).exec();
+                if (!category) {
+                    throw new NotFoundException('Category not found');
+                }
+                return [category];
+            }
             return await this.categoryModel.find().exec();
         }
         catch (error) {
@@ -273,7 +280,7 @@ export class ProductsService {
             sortBy,
         } = query;
 
-        const cacheKey = `products:${JSON.stringify(query)}`;
+        const cacheKey = `products:all`;
 
 
         const cachedProducts = await this.redisService.get(cacheKey);
@@ -282,7 +289,6 @@ export class ProductsService {
             const parsed = JSON.parse(cachedProducts);
             return { products: parsed.products, total: parsed.total };
         }
-
 
         const filter: any = {};
 
@@ -296,9 +302,7 @@ export class ProductsService {
             if (priceMax) filter['variants.sizes.price'].$lte = priceMax;
         }
 
-
         const skip = (page - 1) * limit;
-
 
         let sort: any = { createdAt: -1 };
         if (sortBy) {
@@ -307,12 +311,16 @@ export class ProductsService {
                 : { [sortBy]: 1 };
         }
 
-
         const [products, total] = await Promise.all([
-            this.productModel.find(filter).sort(sort).skip(skip).limit(limit).exec(),
+            this.productModel
+                .find(filter)
+                .sort(sort)
+                .skip(skip)
+                .limit(limit)
+                .populate('category', 'name')
+                .exec(),
             this.productModel.countDocuments(filter).exec(),
         ]);
-
 
         await this.redisService.set(
             cacheKey,
@@ -337,22 +345,21 @@ export class ProductsService {
 
         if (updateProductDto.name) product.name = updateProductDto.name;
         if (updateProductDto.description) product.description = updateProductDto.description;
-        if (updateProductDto.category) product.category = updateProductDto.category;
+        if (updateProductDto.category) product.category = updateProductDto.category as any;
 
 
-        if (updateProductDto.deletedImages?.length) {
+        const deletedImages = updateProductDto.deletedImages ?? [];
+        if (deletedImages.length) {
             const toDelete = product.images.filter(img =>
-                updateProductDto.deletedImages!.includes(img.cloudinaryId),
+                deletedImages.includes(img.cloudinaryId),
             );
 
             await Promise.all(
-                toDelete.map(img =>
-                    this.cloudinaryService.deleteImage(img.cloudinaryId),
-                ),
+                toDelete.map(img => this.cloudinaryService.deleteImage(img.cloudinaryId)),
             );
 
             product.images = product.images.filter(
-                img => !updateProductDto.deletedImages!.includes(img.cloudinaryId),
+                img => !deletedImages.includes(img.cloudinaryId),
             );
         }
 
@@ -375,47 +382,74 @@ export class ProductsService {
         if (updateProductDto.variants?.length) {
             updateProductDto.variants.forEach(updateVariant => {
                 const existingVariant = product.variants.find(
-                    v => v.color === updateVariant.color,
+                    v => v._id === updateVariant._id || v.color === updateVariant.color,
                 );
 
                 if (existingVariant) {
+
+                    if (updateVariant.color) existingVariant.color = updateVariant.color;
+
+
                     if (updateVariant.sizes?.length) {
                         updateVariant.sizes.forEach(updateSize => {
                             const existingSize = existingVariant.sizes.find(
-                                s => s.size === updateSize.size,
+                                s => s._id === updateSize._id || s.size === updateSize.size,
                             );
 
                             if (existingSize) {
+                                if (updateSize.size !== undefined) existingSize.size = updateSize.size;
                                 if (updateSize.price !== undefined) existingSize.price = updateSize.price;
                                 if (updateSize.salePrice !== undefined) existingSize.salePrice = updateSize.salePrice;
                                 if (updateSize.stock !== undefined) existingSize.stock = updateSize.stock;
                             } else {
-                                existingVariant.sizes.push(updateSize as any);
+                                existingVariant.sizes.push({
+                                    _id: updateSize._id ?? new Types.ObjectId().toString(),
+                                    size: updateSize.size!,
+                                    price: updateSize.price!,
+                                    salePrice: updateSize.salePrice ?? 0,
+                                    stock: updateSize.stock!,
+                                });
                             }
                         });
                     }
                 } else {
-                    product.variants.push(updateVariant as any);
+
+                    product.variants.push({
+                        _id: updateVariant._id ?? new Types.ObjectId().toString(),
+                        color: updateVariant.color!,
+                        sizes: updateVariant.sizes?.map(s => ({
+                            _id: s._id ?? new Types.ObjectId().toString(),
+                            size: s.size!,
+                            price: s.price!,
+                            salePrice: s.salePrice ?? 0,
+                            stock: s.stock!,
+                        })) || [],
+                    });
                 }
             });
         }
 
 
-        if (updateProductDto.deletedVariants?.length) {
+        const deletedVariants = updateProductDto.deletedVariants ?? [];
+        if (deletedVariants.length) {
             product.variants = product.variants.filter(
-                v => !updateProductDto.deletedVariants!.includes(v._id.toString()),
+                v => !deletedVariants.includes(v._id.toString()),
             );
         }
 
-        if (updateProductDto.deletedSizes?.length) {
+
+        const deletedSizes = updateProductDto.deletedSizes ?? [];
+        if (deletedSizes.length) {
             product.variants.forEach(variant => {
                 variant.sizes = variant.sizes.filter(
-                    s => !updateProductDto.deletedSizes!.includes(s._id.toString()),
+                    s => !deletedSizes.includes(s._id.toString()),
                 );
             });
         }
 
         await product.save();
+        await this.redisService.del(`product:${id}`);
+        await this.redisService.del('products:all');
         return product;
     }
 
@@ -427,15 +461,18 @@ export class ProductsService {
             return JSON.parse(cachedProduct);
         }
 
-        const product = await this.productModel.findById(id).exec();
+        const product = await this.productModel
+            .findById(id)
+            .populate('category', 'name')
+            .exec();
+
         if (!product) {
             throw new NotFoundException('Product does not exist.');
         }
+
         await this.redisService.set(`product:${id}`, JSON.stringify(product), 60 * 5);
         return product;
     }
-
-
     async remove(id: string): Promise<any> {
         const product = await this.productModel.findById(id).exec();
         if (!product) {

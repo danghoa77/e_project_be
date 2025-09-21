@@ -1,6 +1,8 @@
+// product.schema.ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import { Rating, RatingSchema } from './rating.schema';
+import { Category } from './category.schema';
 @Schema({ _id: false })
 export class Image {
     @Prop({ type: String, required: true })
@@ -14,7 +16,7 @@ const ImageSchema = SchemaFactory.createForClass(Image);
 
 @Schema({ _id: true })
 export class SizeOption {
-    _id: Types.ObjectId;
+    _id: string;
 
     @Prop({ type: String, required: true })
     size: string;
@@ -33,7 +35,7 @@ const SizeOptionSchema = SchemaFactory.createForClass(SizeOption);
 
 @Schema({ _id: true })
 export class ColorVariant {
-    _id: Types.ObjectId;
+    _id: string;
 
     @Prop({ type: String, required: true, index: true })
     color: string;
@@ -58,8 +60,9 @@ export class Product extends Document {
     @Prop({ type: String })
     description: string;
 
-    @Prop({ type: String, required: true, index: true })
-    category: string;
+    @Prop({ type: Types.ObjectId, ref: Category.name, required: true })
+    category: Types.ObjectId;
+
 
     @Prop({ type: [ColorVariantSchema], default: [] })
     variants: ColorVariant[];

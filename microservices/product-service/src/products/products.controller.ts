@@ -33,22 +33,18 @@ export class ProductsController {
     @UseInterceptors(FilesInterceptor('images', 5))
     async create(
         @UploadedFiles() files: Express.Multer.File[],
-        @Body() body: any
+        @Body('dto') dto: string
     ) {
         let parsedDto: CreateProductDto;
-
-        if (body.dto) {
-            try {
-                parsedDto = JSON.parse(body.dto);
-            } catch (e) {
-                throw new BadRequestException('Invalid JSON in dto field');
-            }
-        } else {
-            parsedDto = body;
+        try {
+            parsedDto = JSON.parse(dto);
+        } catch (e) {
+            throw new BadRequestException('Invalid JSON in dto field');
         }
 
         return this.productsService.create(parsedDto, files || []);
     }
+
 
     @Get()
     async findAll(@Query() query: ProductQueryDto) {
@@ -66,19 +62,15 @@ export class ProductsController {
     @UseInterceptors(FilesInterceptor('images', 5))
     async update(
         @Param('id') id: string,
-        @UploadedFiles() files?: Array<Express.Multer.File>,
-        @Body() body?: any,
+        @UploadedFiles() files: Array<Express.Multer.File>,
+        @Body('dto') dto: string,
     ) {
         let parsedDto: UpdateProductDto;
 
-        if (body.updateProductDto) {
-            try {
-                parsedDto = JSON.parse(body.updateProductDto);
-            } catch (e) {
-                throw new BadRequestException('Invalid JSON in updateProductDto field');
-            }
-        } else {
-            parsedDto = body;
+        try {
+            parsedDto = JSON.parse(dto);
+        } catch (e) {
+            throw new BadRequestException('Invalid JSON in updateProductDto field');
         }
 
         const dtoInstance = plainToInstance(UpdateProductDto, parsedDto);
@@ -89,6 +81,7 @@ export class ProductsController {
 
         return this.productsService.update(id, dtoInstance, files);
     }
+
 
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Role('admin')
@@ -144,8 +137,15 @@ export class ProductsController {
 
     @Get('categories/all')
     async findAllCategories() {
-        return this.productsService.findAllCategories();
+        return this.productsService.findCategories();
     }
+
+
+    @Get('categories/:id')
+    async getCategoryById(@Param('id') id: string) {
+        return this.productsService.findCategories(id);
+    }
+
 
     @UseGuards(JwtAuthGuard)
     @Post('rating')

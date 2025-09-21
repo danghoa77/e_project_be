@@ -7,9 +7,15 @@ import {
   Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { Types } from 'mongoose';
 
 
 export class UpdateSizeOptionDto {
+
+  @IsOptional()
+  @IsString()
+  _id?: string;
+
   @IsOptional()
   @IsString()
   size?: string;
@@ -32,6 +38,11 @@ export class UpdateSizeOptionDto {
 
 
 export class UpdateColorVariantDto {
+
+  @IsOptional()
+  @IsString()
+  _id?: string;
+
   @IsOptional()
   @IsString()
   color?: string;
@@ -56,6 +67,12 @@ export class UpdateImageDto {
 
 
 export class UpdateProductDto {
+
+  @IsOptional()
+  @IsString()
+  _id?: string;
+
+
   @IsOptional()
   @IsString()
   name?: string;
@@ -72,7 +89,7 @@ export class UpdateProductDto {
 
   @IsOptional()
   @IsString()
-  category?: string;
+  category?: Types.ObjectId;
 
 
   @IsOptional()
