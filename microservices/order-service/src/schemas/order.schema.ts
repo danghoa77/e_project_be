@@ -12,6 +12,9 @@ export class OrderItem {
   variantId: string;
 
   @Prop({ type: String, required: true })
+  sizeId: string;
+
+  @Prop({ type: String, required: true })
   name: string;
 
   @Prop({ type: String, required: true })
@@ -76,5 +79,3 @@ export class Order extends Document {
 
 export const OrderSchema = SchemaFactory.createForClass(Order);
 export type OrderDocument = HydratedDocument<Order>;
-// OrderSchema.index({ userId: 1 });
-// OrderSchema.index({ status: 1 });

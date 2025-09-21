@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsString, IsNumber, Min, IsArray } from 'class-validator';
+// order-service/src/orders/dto/order.dto.ts
+import { IsNotEmpty, IsString, IsNumber, Min } from 'class-validator';
 
 export class OrderDto {
     @IsNotEmpty()
@@ -7,11 +8,15 @@ export class OrderDto {
 
     @IsNotEmpty()
     @IsString()
-    name: string;
+    variantId: string;
 
     @IsNotEmpty()
     @IsString()
-    variantId: string;
+    sizeId: string;
+
+    @IsNotEmpty()
+    @IsString()
+    name: string;
 
     @IsNotEmpty()
     @IsString()

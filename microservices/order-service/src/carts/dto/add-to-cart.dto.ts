@@ -10,6 +10,10 @@ export class AddToCartDto {
   @IsString()
   variantId: string;
 
+  @IsNotEmpty()
+  @IsString()
+  sizeId: string;
+
   @IsNumber()
   @Min(1)
   quantity: number;

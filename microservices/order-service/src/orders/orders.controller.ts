@@ -17,12 +17,7 @@ import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { JwtAuthGuard } from '@app/common-auth';
 import { Request } from 'express';
 
-interface AuthenticatedRequest extends Request {
-  user: {
-    userId: string;
-    role: string;
-  };
-}
+
 
 @UseGuards(JwtAuthGuard)
 @Controller('orders')
@@ -32,14 +27,14 @@ export class OrdersController {
   // @Role('customer')
   @Post()
   async createOrder(
-    @Req() req: AuthenticatedRequest,
+    @Req() req: any,
     @Body() createOrderDto: CreateOrderDto,
   ) {
     return this.ordersService.createOrder(req.user.userId, createOrderDto);
   }
 
   @Get()
-  async getOrders(@Req() req: AuthenticatedRequest) {
+  async getOrders(@Req() req: any) {
     if (req.user.role === 'admin') {
       return this.ordersService.findAllOrders();
     }
@@ -47,13 +42,13 @@ export class OrdersController {
   }
 
   // @Get('all')
-  // async getAllOrders(@Req() req: AuthenticatedRequest) {
+  // async getAllOrders(@Req() req: any) {
   //   return this.ordersService.findAllOrders();
   // }
   //search
   @Get(':id')
   async getOrderById(
-    @Req() req: AuthenticatedRequest,
+    @Req() req: any,
     @Param('id') id: string,
   ) {
     const order = await this.ordersService.findOrderById(id);
@@ -70,7 +65,7 @@ export class OrdersController {
 
   @Put(':id/cancel')
   async cancelOrder(
-    @Req() req: AuthenticatedRequest,
+    @Req() req: any,
     @Param('id') id: string,
   ) {
     return this.ordersService.cancelOrder(id);
