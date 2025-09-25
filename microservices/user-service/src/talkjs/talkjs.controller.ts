@@ -23,6 +23,7 @@ import { CreateTalkjsConversationDto } from './dto/create-talkjs-conversation.dt
 import { SendTalkjsMessageDto } from './dto/send-talkjs-message.dto';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
+
 interface AuthenticatedUser {
   userId: string;
   email: string;
@@ -31,69 +32,28 @@ interface AuthenticatedUser {
 
 @Controller('talkjs')
 export class TalkjsController {
-  constructor(private readonly talkjsCommonService: TalkjsService) { }
+  constructor(private readonly talkjsService: TalkjsService) { }
   private readonly logger = new Logger(TalkjsController.name);
   private readonly httpService = new HttpService();
-  @Post('token')
-  getTalkjsToken(@Req() req: { user: AuthenticatedUser }) {
-    const { userId, email, role } = req.user;
-    const talkjsToken = this.talkjsCommonService.generateTalkjsToken(
-      userId,
-      email,
-      role,
-    );
-    return {
-      token: talkjsToken,
-      appId: this.talkjsCommonService['talkjsAppId'],
-    };
-  }
 
 
   @UseGuards(JwtAuthGuard)
-  @Post('conversations')
-  async createOrGetConversation(
-    @Body() createConversationDto: CreateTalkjsConversationDto,
+  @Post('mode/set')
+  async setChatMode(
     @Req() req: { user: AuthenticatedUser },
-  ): Promise<any> {
-    const { targetCustomerId } = createConversationDto;
-    const currentUser = req.user;
-
-    let participantIds: string[];
-    let conversationId: string;
-
-    if (currentUser.role === 'customer') {
-      try {
-        const url = 'http://localhost:3000/users/getAdmin1st';
-        const response = await firstValueFrom(this.httpService.get<string>(url));
-        const adminId = response.data;
-        if (!adminId) {
-          throw new BadRequestException(
-            'Admin ID is required for a customer to start a conversation.',
-          );
-        }
-        participantIds = [currentUser.userId, adminId];
-        conversationId = `customer-${currentUser.userId}-admin-${adminId}`;
-      }
-      catch (err: any) { throw new BadRequestException(err.message) }
-    } else if (currentUser.role === 'admin') {
-      if (!targetCustomerId) {
-        throw new BadRequestException(
-          'Customer ID is required for admin to start a conversation.',
-        );
-      }
-      participantIds = [currentUser.userId, targetCustomerId];
-      conversationId = `customer-${targetCustomerId}-admin-${currentUser.userId}`;
-    } else {
-      throw new UnauthorizedException('Invalid user role for chat.');
-    }
-    // this.logger.log(
-    //   `Creating or getting conversation with ID: ${conversationId} for participants: ${participantIds.join(', ')}`,
-    // );
-    return this.talkjsCommonService.getOrCreateConversation(
-      conversationId,
-      participantIds,
-    );
+    @Body() body: { mode: 'bot' | 'admin' },
+  ) {
+    await this.talkjsService.setChatMode(req.user.userId, body.mode);
+    return { userId: req.user.userId, mode: body.mode };
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('mode/get')
+  async getChatMode(@Req() req: { user: AuthenticatedUser }) {
+    const mode = await this.talkjsService.getChatMode(req.user.userId);
+    return { userId: req.user.userId, mode };
+  }
+
 
   @UseGuards(JwtAuthGuard)
   @Post('messages')
@@ -103,23 +63,37 @@ export class TalkjsController {
   ): Promise<any> {
     const { conversationId, message } = sendMessageDto;
     const senderId = req.user.userId;
-    return this.talkjsCommonService.sendMessage(
-      conversationId,
-      senderId,
-      message,
+    return this.talkjsService.sendMessage(conversationId, senderId, message);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('messages/handle')
+  async handleMessage(
+    @Body()
+    body: {
+      conversationId: string;
+      message: string;
+      type?: string;
+    },
+    @Req() req: { user: AuthenticatedUser },
+  ): Promise<any> {
+    const senderId = req.user.userId;
+    const mode = await this.talkjsService.getChatMode(senderId);
+    return this.talkjsService.handleUserMessage(
+      body.conversationId,
+      body.message,
+      mode,
+      body.type || 'text',
     );
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Role('admin')
   @Get('conversations/me')
-  async getMyConversations(
-    @Req() req: { user: AuthenticatedUser },
-  ): Promise<any> {
+  async getMyConversations(@Req() req: { user: AuthenticatedUser }) {
     const userId = req.user.userId;
-    return this.talkjsCommonService.listUserConversations(userId);
+    return this.talkjsService.listUserConversations(userId);
   }
-
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Delete('conversations/:conversationId')
@@ -128,6 +102,6 @@ export class TalkjsController {
   async deleteTalkjsConversation(
     @Param('conversationId') conversationId: string,
   ): Promise<void> {
-    await this.talkjsCommonService.deleteConversation(conversationId);
+    await this.talkjsService.deleteConversation(conversationId);
   }
 }
