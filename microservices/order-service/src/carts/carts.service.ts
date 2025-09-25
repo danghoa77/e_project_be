@@ -12,20 +12,26 @@ import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { RedisService } from '@app/common-auth';
 
-interface ProductVariant {
+
+interface ProductVariantSize {
   _id: string;
-  stock: number;
+  size: string;
   price: number;
   salePrice?: number;
-  name?: string;
-  size?: string;
-  color?: string;
+  stock: number;
+}
+
+interface ProductVariant {
+  _id: string;
+  color: string;
+  sizes: ProductVariantSize[];
 }
 
 interface ProductData {
+  _id: string;
+  name: string;
+  images: { url: string }[];
   variants: ProductVariant[];
-  name?: string;
-  imageUrl?: string;
 }
 
 @Injectable()
@@ -49,33 +55,6 @@ export class CartsService {
         items: [],
       });
     }
-
-    const updatedItems = await Promise.all(
-      cart.items.map(async (item) => {
-        try {
-          const Url = `http://product-service:3000/products/${item.productId}`;
-          const res = await firstValueFrom(this.httpService.get(Url));
-          const productData = res.data;
-
-          return {
-            ...(item as any).toObject?.() ?? item,
-            price: productData.price,
-            salePrice: productData.salePrice,
-          };
-
-        } catch (err) {
-          this.logger.error(`Failed to fetch product ${item.productId}: ${err.message}`);
-          return {
-            ...(item as any).toObject?.() ?? item,
-            price: null,
-            salePrice: null
-          };
-        }
-      })
-    );
-
-    cart.set('items', updatedItems, { strict: false });
-    this.logger.log("Cart with prices", cart);
     return cart;
   }
 
@@ -83,7 +62,8 @@ export class CartsService {
   private async _getProductVariant(
     productId: string,
     variantId: string,
-  ): Promise<{ productData: ProductData; variant: ProductVariant }> {
+    sizeId: string,
+  ): Promise<{ productData: ProductData; variant: ProductVariant; size: ProductVariantSize }> {
     const productUrl = `http://product-service:3000/products/${productId}`;
 
     let response;
@@ -103,26 +83,25 @@ export class CartsService {
       );
     }
 
-    const found = productData.variants.find(
-      (v: any) => v._id?.toString() === variantId || v._id === variantId,
+    const foundVariant = productData.variants.find(
+      (v) => v._id.toString() === variantId,
     );
-
-    if (!found) {
+    if (!foundVariant) {
       throw new BadRequestException(
-        `Product variant with ID ${variantId} does not exist.`,
+        `Variant with ID ${variantId} does not exist for product ${productId}.`,
       );
     }
-    const variant: ProductVariant = {
-      _id: found._id.toString ? found._id.toString() : String(found._id),
-      stock: Number(found.stock ?? 0),
-      price: Number(found.price ?? 0),
-      salePrice: found.salePrice ? Number(found.salePrice) : undefined,
-      name: found.name,
-      size: found.size,
-      color: found.color,
-    };
-    console.log(productData);
-    return { productData, variant };
+
+    const foundSize = foundVariant.sizes.find(
+      (s) => s._id.toString() === sizeId,
+    );
+    if (!foundSize) {
+      throw new BadRequestException(
+        `Size with ID ${sizeId} does not exist for variant ${variantId}.`,
+      );
+    }
+
+    return { productData, variant: foundVariant, size: foundSize };
   }
 
   async getCartByUserId(userId: string): Promise<any[]> {
@@ -135,47 +114,60 @@ export class CartsService {
       cart.items.map(async (item) => {
         const url = `http://product-service:3000/products/${item.productId}`;
         const res = await firstValueFrom(this.httpService.get(url));
-        const product = res.data;
+        const product: ProductData = res.data;
 
-        const variant = product.variants.find(v => v._id === item.variantId);
-
+        const variant = product.variants.find((v) => v._id === item.variantId);
         if (!variant) {
-          throw new Error(`Variant ${item.variantId} not found for product ${product._id}`);
+          throw new Error(
+            `Variant ${item.variantId} not found for product ${product._id}`,
+          );
         }
-        this.logger.log(variant);
+
+        const sizeOption = variant.sizes.find((s) => s._id === item.sizeId);
+        if (!sizeOption) {
+          throw new Error(
+            `Size ${item.sizeId} not found for variant ${variant._id} in product ${product._id}`,
+          );
+        }
+
+        const finalPrice =
+          sizeOption.salePrice && sizeOption.salePrice > 0
+            ? sizeOption.salePrice
+            : sizeOption.price;
+
         return {
           productId: product._id,
           name: product.name,
           variantId: variant._id,
+          sizeId: sizeOption._id,
           imageUrl: product.images[0]?.url,
-          size: variant.size,
+          size: sizeOption.size,
           color: variant.color,
-          price: variant.salePrice && variant.salePrice > 0 ? variant.salePrice : variant.price,
+          price: finalPrice,
           quantity: item.quantity,
-          total: variant.price * item.quantity
+          total: finalPrice * item.quantity,
         };
-      })
+      }),
     );
-    this.logger.log("Cart with prices", products);
+
     return products;
   }
-
 
 
   async addItemToCart(
     userId: string,
     addItemDto: AddToCartDto,
   ): Promise<CartDocument> {
-    const { productId, variantId, quantity } = addItemDto;
+    const { productId, variantId, sizeId, quantity } = addItemDto;
 
-    if (!productId || !variantId || !quantity || quantity <= 0) {
+    if (!productId || !variantId || !sizeId || !quantity || quantity <= 0) {
       throw new BadRequestException('Invalid addItemDto payload.');
     }
 
-    const { variant } = await this._getProductVariant(productId, variantId);
-    if (variant.stock < quantity) {
+    const { size } = await this._getProductVariant(productId, variantId, sizeId);
+    if (size.stock < quantity) {
       throw new BadRequestException(
-        `Insufficient stock for variant ${variantId}. Only ${variant.stock} left.`,
+        `Insufficient stock for size ${sizeId}. Only ${size.stock} left.`,
       );
     }
 
@@ -184,51 +176,49 @@ export class CartsService {
     const existingItem = cart.items.find(
       (item) =>
         item.productId.toString() === productId &&
-        item.variantId === variantId,
+        item.variantId === variantId &&
+        item.sizeId === sizeId,
     );
 
     if (existingItem) {
       const newQuantity = existingItem.quantity + quantity;
-      if (newQuantity > variant.stock) {
+      if (newQuantity > size.stock) {
         throw new BadRequestException(
-          `Cannot add. Total quantity in cart (${newQuantity}) exceeds stock (${variant.stock}).`,
+          `Cannot add. Total quantity in cart (${newQuantity}) exceeds stock (${size.stock}).`,
         );
       }
       existingItem.quantity = newQuantity;
-
     } else {
       cart.items.push({
         productId: new Types.ObjectId(productId),
         variantId,
+        sizeId,
         quantity,
       });
     }
 
-    try {
-      await this.redisService.del(`cart:${userId}`);
-    } catch (err) {
-      this.logger.warn(`Redis del failed for cart:${userId}: ${err}`);
-    }
-
+    await this.redisService.del(`cart:${userId}`);
     return cart.save();
   }
-
 
   async removeItemFromCart(
     userId: string,
     productId: string,
     variantId: string,
-  ): Promise<CartDocument> {
+    sizeId: string,
+  ): Promise<CartDocument | null> {
     const cart = await this._getFreshCartByUserId(userId);
 
     const itemExists = cart.items.some(
       (item) =>
-        item.productId.toString() === productId && item.variantId === variantId,
+        item.productId.toString() === productId &&
+        item.variantId === variantId &&
+        item.sizeId === sizeId,
     );
 
     if (!itemExists) {
       throw new NotFoundException(
-        `Cannot find item with productId ${productId} and variantId ${variantId} in this cart.`,
+        `Cannot find item with productId ${productId}, variantId ${variantId}, sizeId ${sizeId} in cart.`,
       );
     }
 
@@ -242,83 +232,63 @@ export class CartsService {
           items: {
             productId: objectProductId,
             variantId,
+            sizeId,
           },
         },
       },
       { new: true },
     );
 
-    try {
-      await this.redisService.del(`cart:${userId}`);
-    } catch (err) {
-      this.logger.warn(`Redis del failed for cart:${userId}: ${err}`);
-    }
-
-    this.logger.log(
-      `Item with productId ${productId} and variantId ${variantId} removed from cart for user ${userId}.`,
-    );
-
-    if (!updatedCart) {
-      throw new NotFoundException('Cart not found');
-    }
+    await this.redisService.del(`cart:${userId}`);
     return updatedCart;
   }
+
 
   async updateItemQuantity(
     userId: string,
     productId: string,
     variantId: string,
+    sizeId: string,
     quantity: number,
-  ): Promise<CartDocument> {
+  ): Promise<CartDocument | null> {
     if (quantity <= 0) {
-      return this.removeItemFromCart(userId, productId, variantId);
+      return this.removeItemFromCart(userId, productId, variantId, sizeId);
     }
 
     const cart = await this._getFreshCartByUserId(userId);
     const itemIndex = cart.items.findIndex(
       (item) =>
-        item.productId.toString() === productId && item.variantId === variantId,
+        item.productId.toString() === productId &&
+        item.variantId === variantId &&
+        item.sizeId === sizeId,
     );
 
     if (itemIndex === -1) {
       throw new NotFoundException('Item not found in cart.');
     }
 
-    const { variant } = await this._getProductVariant(productId, variantId);
-    if (variant.stock < quantity) {
+    const { size } = await this._getProductVariant(productId, variantId, sizeId);
+    if (size.stock < quantity) {
       throw new BadRequestException(
-        `Insufficient stock. Only ${variant.stock} left.`,
+        `Insufficient stock. Only ${size.stock} left.`,
       );
     }
 
     cart.items[itemIndex].quantity = quantity;
-    // keep price updated
-    // cart.items[itemIndex].price = variant.price;
 
-    try {
-      await this.redisService.del(`cart:${userId}`);
-    } catch (err) {
-      this.logger.warn(`Redis del failed for cart:${userId}: ${err}`);
-    }
-
-    this.logger.log(
-      `Item quantity updated for productId ${productId} and variantId ${variantId} in cart for user ${userId}.`,
-    );
+    await this.redisService.del(`cart:${userId}`);
     return cart.save();
   }
 
-  async clearCart(userId: string, session?: ClientSession): Promise<void> {
+
+  async clearCart(userId: string, session?: ClientSession): Promise<any[]> {
     const cart = await this._getFreshCartByUserId(userId);
     if (cart) {
       cart.items = [];
       await cart.save({ session });
-      try {
-        await this.redisService.del(`cart:${userId}`);
-      } catch (err) {
-        this.logger.warn(`Redis del failed for cart:${userId}: ${err}`);
-      }
-      this.logger.log(`Cart for user ${userId} has been cleared.`);
+      await this.redisService.del(`cart:${userId}`);
     }
+    return [];
   }
 
 }

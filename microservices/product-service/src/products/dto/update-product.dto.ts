@@ -1,12 +1,61 @@
-// product-service/src/products/dto/update-product.dto.ts
-import { PartialType, OmitType } from '@nestjs/mapped-types';
-import { CreateProductDto, CreateVariantDto } from './create-product.dto';
-import { IsOptional, IsArray, ValidateNested, IsString } from 'class-validator';
+import {
+  IsOptional,
+  IsArray,
+  ValidateNested,
+  IsString,
+  IsNumber,
+  Min,
+} from 'class-validator';
 import { Type } from 'class-transformer';
+import { Types } from 'mongoose';
 
-class UpdateVariantDto extends PartialType(CreateVariantDto) { }
 
-class UpdateImageDto {
+export class UpdateSizeOptionDto {
+
+  @IsOptional()
+  @IsString()
+  _id?: string;
+
+  @IsOptional()
+  @IsString()
+  size?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  price?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  salePrice?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  stock?: number;
+}
+
+
+export class UpdateColorVariantDto {
+
+  @IsOptional()
+  @IsString()
+  _id?: string;
+
+  @IsOptional()
+  @IsString()
+  color?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => UpdateSizeOptionDto)
+  sizes?: UpdateSizeOptionDto[];
+}
+
+
+export class UpdateImageDto {
   @IsOptional()
   @IsString()
   url?: string;
@@ -16,9 +65,18 @@ class UpdateImageDto {
   cloudinaryId?: string;
 }
 
-export class UpdateProductDto extends PartialType(
-  OmitType(CreateProductDto, ['variants', 'images'] as const),
-) {
+
+export class UpdateProductDto {
+
+  @IsOptional()
+  @IsString()
+  _id?: string;
+
+
+  @IsOptional()
+  @IsString()
+  name?: string;
+
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
@@ -26,13 +84,35 @@ export class UpdateProductDto extends PartialType(
   images?: UpdateImageDto[];
 
   @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  deletedImages?: string[];
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @IsString()
+  category?: Types.ObjectId;
+
 
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => UpdateVariantDto)
-  variants?: UpdateVariantDto[];
+  @Type(() => UpdateColorVariantDto)
+  variants?: UpdateColorVariantDto[];
+
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  deletedImages?: string[];
+
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  deletedVariants?: string[];
+
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  deletedSizes?: string[];
 }

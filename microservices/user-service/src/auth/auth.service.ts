@@ -119,25 +119,30 @@ export class AuthService {
 
     if (user) {
       let needsSave = false;
+
       if (!user.googleId) {
         user.googleId = profile.googleId;
         needsSave = true;
       }
+
       if (profile.picture && user.photoUrl !== profile.picture) {
         user.photoUrl = profile.picture;
         needsSave = true;
       }
+
       if (needsSave) await user.save();
       return user;
     }
 
+
     const newUser = await this.usersService.createUser({
       email: profile.email,
-      name: `${profile.firstName} ${profile.lastName || ''}`.trim()
-        || profile.email.split('@')[0],
+      name:
+        `${profile.firstName} ${profile.lastName || ''}`.trim() ||
+        profile.email.split('@')[0],
       googleId: profile.googleId,
       photoUrl: profile.picture,
-      password: await bcrypt.hash(Date.now().toString(), 10),
+      password: await bcrypt.hash(Date.now().toString(), 10), //random password for validation in db 
     });
 
     await this.talkjsService.upsertUser({
@@ -148,9 +153,6 @@ export class AuthService {
       phone: newUser.phone,
     });
 
-    if (!newUser) {
-      throw new InternalServerErrorException('Failed to create user from Google profile.');
-    }
     return newUser;
   }
 
@@ -188,7 +190,14 @@ export class AuthService {
   }
 
   async logout(userId: string): Promise<void> {
-    await this.redisService.del(`session:${userId}`);
-    this.logger.log(`User with ID ${userId} logged out successfully.`);
+    try {
+      await this.redisService.del(`session:${userId}`);
+      await this.redisService.del(`user:${userId}`);
+      this.logger.log(`User with ID ${userId} logged out successfully.`);
+    } catch (err) {
+      this.logger.error(`Failed to logout user with ID ${userId}`, err);
+      throw new InternalServerErrorException('Failed to logout user.');
+    }
   }
+
 }

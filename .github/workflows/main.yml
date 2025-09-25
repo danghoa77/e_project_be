@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
 
-env:  # Dùng chung cho tất cả jobs
+env: # Dùng chung cho tất cả jobs
   MONGO_USERNAME: ${{ secrets.MONGO_USERNAME }}
   MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
   MONGO_HOST: ${{ secrets.MONGO_HOST }}

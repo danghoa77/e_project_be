@@ -4,11 +4,14 @@ import { Document, Types, HydratedDocument } from 'mongoose';
 
 @Schema({ _id: false })
 export class CartItem {
-  @Prop({ type: Types.ObjectId, required: true })
+  @Prop({ type: Types.ObjectId, required: true, ref: 'Product' })
   productId: Types.ObjectId;
 
   @Prop({ type: String, required: true })
   variantId: string;
+
+  @Prop({ type: String, required: true })
+  sizeId: string;
 
   @Prop({ type: Number, required: true, min: 1 })
   quantity: number;
@@ -28,7 +31,11 @@ export class Cart extends Document {
   @Prop({ type: [CartItemSchema], default: [] })
   items: CartItem[];
 }
+
 export type CartDocument = HydratedDocument<Cart>;
 export const CartSchema = SchemaFactory.createForClass(Cart);
 
-// CartSchema.index({ userId: 1 });
+CartSchema.index({ userId: 1 });
+CartSchema.index({ 'items.productId': 1 });
+CartSchema.index({ 'items.variantId': 1 });
+CartSchema.index({ 'items.sizeId': 1 });
