@@ -181,7 +181,10 @@ Instructions:
 - Nếu câu hỏi của user có liên quan đến sản phẩm (tên, giá, mô tả, phân loại, v.v) thì hãy trả lời dựa trên Product Information ở trên.
 - Nếu không tìm thấy sản phẩm liên quan hoặc user hỏi linh tinh/không rõ ràng, hãy trả lời đúng theo mẫu sau:
 "Tôi có các sản phẩm này, bạn cần hỗ trợ gì thì nhắn tôi nhé."
+- Nếu user muốn trao đổi thêm, cần hỗ trợ chi tiết hoặc hỏi vấn đề không thể giải quyết qua bot, hãy trả lời thêm:
+"Bạn có thể nhấn 'Try chat with Admin' để liên hệ trực tiếp với Admin nhé."
 `;
+
 
     console.log('Prompt to Cohere:', prompt);
     const aiAnswer = await this.askCohere(prompt);
