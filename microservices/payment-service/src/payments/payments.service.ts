@@ -5,10 +5,12 @@ import { Payment } from '../schemas/payment.schema';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { RedisService } from '@app/common-auth';
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import * as crypto from 'crypto';
 import * as qs from 'qs';
 import { format } from 'date-fns';
+import { firstValueFrom } from 'rxjs';
+
 
 @Injectable()
 export class PaymentsService {
@@ -90,27 +92,40 @@ export class PaymentsService {
         this.logger.log(`Created VNPAY URL: ${vnpUrl}`);
         return vnpUrl;
     }
-    async handleVnpayUrl(responseCode: string, orderId: string) {
+    async handleVnpayUrl(responseCode: string, orderId: string, token: string) {
         if (responseCode === '00') {
-            await this.paymentModel.updateOne(
-                { orderId },
-                { status: 'SUCCESS' },
-            );
+            await this.paymentModel.updateOne({ orderId }, { status: 'SUCCESS' });
             try {
-                const method = 'VNPAY'
-                const url = `http://order-service:3000/orders/${orderId}/${method}`
-                await this.httpService.post(url);
+                const method = 'VNPAY';
+                const url = `http://order-service:3000/orders/${orderId}/${method}`;
+                const response: AxiosResponse<any> = await firstValueFrom(
+                    this.httpService.post(
+                        url,
+                        {},
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                            },
+                        },
+                    ),
+                );
+
+                this.logger.log(
+                    `✅ Notified order-service successfully: ${JSON.stringify(response.data)}`,
+                );
+            } catch (err: any) {
+                this.logger.error(
+                    `Failed to notify order-service for order ${orderId}: ${err.message}`,
+                    err.stack,
+                );
+                throw new BadRequestException(`Notify order-service failed: ${err.message}`);
             }
-            catch (err: any) { throw new BadRequestException(err.message) }
         } else {
-            await this.paymentModel.updateOne(
-                { orderId },
-                { status: 'FAILED' },
-            );
-            this.logger.log("failed")
+            await this.paymentModel.updateOne({ orderId }, { status: 'FAILED' });
+            this.logger.log(`Payment failed for orderId: ${orderId}`);
         }
 
-        return { responseCode }
+        return { responseCode };
     }
 
     async createMomoPayment(orderId: string, amountUsd: number, userId: string) {
@@ -132,8 +147,8 @@ export class PaymentsService {
         this.logger.log(`UserId: ${userId}`);
         this.logger.log(`Amount USD: ${amountUsd}, Amount VND: ${amountVnd}`);
 
-        const requestId = `${partnerCode}${Date.now()}`;
-        const orderInfo = `Thanh toan don hang ${orderId}`;
+        const requestId = `${partnerCode}${Date.now()}`.trim();
+        const orderInfo = `Thanh toan don hang ${orderId}`.trim();
         const requestType = 'payWithMethod';
         const extraData = '';
 
@@ -188,27 +203,40 @@ export class PaymentsService {
         }
     }
 
-    async handleMomoURL(resultCode: string, orderId: string) {
-
+    async handleMomoURL(resultCode: string, orderId: string, token: string) {
         if (resultCode === '0') {
-            await this.paymentModel.updateOne(
-                { orderId },
-                { status: 'SUCCESS' },
-            );
+            await this.paymentModel.updateOne({ orderId }, { status: 'SUCCESS' });
+
             try {
-                const method = 'MOMO'
-                const url = `http://order-service:3000/orders/${orderId}/${method}`
-                await this.httpService.post(url);
+                const method = 'MOMO';
+                const url = `http://order-service:3000/orders/${orderId}/${method}`;
+                const response: AxiosResponse<any> = await firstValueFrom(
+                    this.httpService.post(
+                        url,
+                        {},
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                            },
+                        },
+                    ),
+                );
+
+                this.logger.log(
+                    `✅ Notified order-service successfully: ${JSON.stringify(response.data)}`,
+                );
             } catch (err: any) {
-                throw new BadRequestException(err.message)
+                this.logger.error(
+                    `Failed to notify order-service for order ${orderId}: ${err.message}`,
+                    err.stack,
+                );
+                throw new BadRequestException(`Notify order-service failed: ${err.message}`);
             }
         } else {
-            await this.paymentModel.updateOne(
-                { orderId },
-                { status: 'FAILED' },
-            );
-            this.logger.log("failed")
+            await this.paymentModel.updateOne({ orderId }, { status: 'FAILED' });
+            this.logger.log(`Payment failed for orderId: ${orderId}`);
         }
+
         return { resultCode };
     }
 

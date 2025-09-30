@@ -243,6 +243,64 @@ export class CartsService {
     return updatedCart;
   }
 
+  async increaseItemQuantity(
+    userId: string,
+    productId: string,
+    variantId: string,
+    sizeId: string,
+  ): Promise<CartDocument | null> {
+    const cart = await this._getFreshCartByUserId(userId);
+    const item = cart.items.find(
+      (i) =>
+        i.productId.toString() === productId &&
+        i.variantId === variantId &&
+        i.sizeId === sizeId,
+    );
+
+    if (!item) {
+      throw new NotFoundException('Item not found in cart.');
+    }
+
+    const { size } = await this._getProductVariant(productId, variantId, sizeId);
+    if (item.quantity + 1 > size.stock) {
+      throw new BadRequestException(
+        `Cannot increase. Stock only ${size.stock} left.`,
+      );
+    }
+
+    item.quantity += 1;
+    await this.redisService.del(`cart:${userId}`);
+    return cart.save();
+  }
+
+  async decreaseItemQuantity(
+    userId: string,
+    productId: string,
+    variantId: string,
+    sizeId: string,
+  ): Promise<CartDocument | null> {
+    const cart = await this._getFreshCartByUserId(userId);
+    const itemIndex = cart.items.findIndex(
+      (i) =>
+        i.productId.toString() === productId &&
+        i.variantId === variantId &&
+        i.sizeId === sizeId,
+    );
+
+    if (itemIndex === -1) {
+      throw new NotFoundException('Item not found in cart.');
+    }
+
+    const item = cart.items[itemIndex];
+    if (item.quantity > 1) {
+      item.quantity -= 1;
+    } else {
+      cart.items.splice(itemIndex, 1);
+    }
+
+    await this.redisService.del(`cart:${userId}`);
+    return cart.save();
+  }
 
   async updateItemQuantity(
     userId: string,
@@ -263,6 +321,7 @@ export class CartsService {
         item.sizeId === sizeId,
     );
 
+
     if (itemIndex === -1) {
       throw new NotFoundException('Item not found in cart.');
     }
@@ -279,7 +338,6 @@ export class CartsService {
     await this.redisService.del(`cart:${userId}`);
     return cart.save();
   }
-
 
   async clearCart(userId: string, session?: ClientSession): Promise<any[]> {
     const cart = await this._getFreshCartByUserId(userId);
