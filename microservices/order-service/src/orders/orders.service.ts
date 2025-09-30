@@ -15,19 +15,6 @@ import { firstValueFrom } from 'rxjs';
 import { CartsService } from '../carts/carts.service';
 import { RedisService } from '@app/common-auth';
 
-interface ProductVariant {
-  _id: string;
-  stock: number;
-  price: number;
-  salePrice: number;
-  size: string;
-  color: string;
-}
-
-interface ProductData {
-  variants: ProductVariant[];
-  name: string;
-}
 
 @Injectable()
 export class OrdersService {

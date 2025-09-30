@@ -36,10 +36,14 @@ export class PaymentsController {
 
 
     @Post('momo/return')
-    async momoIPN(@Body() body: { orderId: string; resultCode: string }) {
+    async momoIPN(
+        @Req() req: any,
+        @Body() body: { orderId: string; resultCode: string }) {
+        const authHeader = req.headers['authorization'] || req.headers['Authorization'];
+        const token = authHeader?.split(' ')[1];
         const { orderId, resultCode } = body;
         this.logger.log('Momo IPN called', { orderId, resultCode });
-        return this.paymentsService.handleMomoURL(body.resultCode, body.orderId);
+        return this.paymentsService.handleMomoURL(body.resultCode, body.orderId, token);
     }
 
     @Post('vnpay/create')
@@ -53,9 +57,13 @@ export class PaymentsController {
     }
 
     @Post('vnpay/return')
-    async vnpayIPN(@Body() body: { orderId: string; responseCode: string }) {
+    async vnpayIPN(
+        @Req() req: any,
+        @Body() body: { orderId: string; responseCode: string }) {
+        const authHeader = req.headers['authorization'] || req.headers['Authorization'];
+        const token = authHeader?.split(' ')[1];
         const { orderId, responseCode } = body;
-        return this.paymentsService.handleVnpayUrl(responseCode, orderId);
+        return this.paymentsService.handleVnpayUrl(responseCode, orderId, token);
     }
 
 
@@ -68,10 +76,8 @@ export class PaymentsController {
         if (!payment) {
             throw new NotFoundException('Payment information does not exist or you do not have access.');
         }
-
         return payment;
     }
-
 
 
     @Delete('all')

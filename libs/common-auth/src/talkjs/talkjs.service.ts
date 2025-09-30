@@ -134,8 +134,6 @@ export class TalkjsService {
     }
 
     let productSubset: any[] = await this.getProductInfo();
-    console.log('Total products:', productSubset);
-
     if (this.checkTotal()) {
       const keywords = message
         .toLowerCase()
@@ -186,7 +184,6 @@ Instructions:
 `;
 
 
-    console.log('Prompt to Cohere:', prompt);
     const aiAnswer = await this.askCohere(prompt);
 
     const url = `http://user-service:3000/users/admin1st`;

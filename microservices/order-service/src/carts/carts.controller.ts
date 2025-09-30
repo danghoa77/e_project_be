@@ -8,6 +8,7 @@ import {
   Param,
   Delete,
   Put,
+  Patch,
 } from '@nestjs/common';
 import { CartsService } from './carts.service';
 import { AddToCartDto } from './dto/add-to-cart.dto';
@@ -41,6 +42,36 @@ export class CartsController {
     @Param('sizeId') sizeId: string,
   ) {
     return this.cartsService.removeItemFromCart(
+      req.user.userId,
+      productId,
+      variantId,
+      sizeId,
+    );
+  }
+
+  @Patch(':productId/:variantId/:sizeId/increase')
+  async increaseQuantity(
+    @Req() req: any,
+    @Param('productId') productId: string,
+    @Param('variantId') variantId: string,
+    @Param('sizeId') sizeId: string,
+  ) {
+    return this.cartsService.increaseItemQuantity(
+      req.user.userId,
+      productId,
+      variantId,
+      sizeId,
+    );
+  }
+
+  @Patch(':productId/:variantId/:sizeId/decrease')
+  async decreaseQuantity(
+    @Req() req: any,
+    @Param('productId') productId: string,
+    @Param('variantId') variantId: string,
+    @Param('sizeId') sizeId: string,
+  ) {
+    return this.cartsService.decreaseItemQuantity(
       req.user.userId,
       productId,
       variantId,
