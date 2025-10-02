@@ -193,8 +193,17 @@ export class OrdersService {
       {
         $lookup: {
           from: "categories",
-          localField: "_id",
-          foreignField: "_id",
+          let: { cid: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: [{ $toString: "$_id" }, { $toString: "$$cid" }]
+                }
+              }
+            },
+            { $project: { name: 1 } }
+          ],
           as: "category"
         }
       },
@@ -208,10 +217,108 @@ export class OrdersService {
       }
     ]);
 
+
     const labels = topCategories.map(c => c.name);
     const data = topCategories.map(c => c.totalQuantity);
 
     return { labels, data };
+  }
+
+  async topProducts(limit = 5) {
+    try {
+      const agg = await this.orderModel.aggregate([
+        { $match: { status: "confirmed" } },
+        { $unwind: "$items" },
+        {
+          $group: {
+            _id: "$items.productId",
+            totalSold: { $sum: "$items.quantity" },
+            nameFromOrder: { $first: "$items.name" },
+          },
+        },
+        { $sort: { totalSold: -1 } },
+        { $limit: limit },
+        {
+          $lookup: {
+            from: "products",
+            let: { pid: "$_id" },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $eq: [{ $toString: "$_id" }, { $toString: "$$pid" }],
+                  },
+                },
+              },
+              {
+                $project: {
+                  name: 1,
+                  images: 1,
+                  variants: 1,
+                },
+              },
+            ],
+            as: "product",
+          },
+        },
+        { $unwind: { path: "$product", preserveNullAndEmptyArrays: true } },
+        {
+          $project: {
+            _id: 0,
+            productId: "$_id",
+            name: { $ifNull: ["$product.name", "$nameFromOrder"] },
+            totalSold: 1,
+            image: {
+              $let: {
+                vars: { firstImage: { $arrayElemAt: ["$product.images", 0] } },
+                in: { $ifNull: ["$$firstImage.url", null] },
+              },
+            },
+
+            price: {
+              $let: {
+                vars: { firstVariant: { $arrayElemAt: ["$product.variants", 0] } },
+                in: {
+                  $let: {
+                    vars: { firstSize: { $arrayElemAt: ["$$firstVariant.sizes", 0] } },
+                    in: { $ifNull: ["$$firstSize.price", null] },
+                  },
+                },
+              },
+            },
+
+            salePrice: {
+              $let: {
+                vars: { firstVariant: { $arrayElemAt: ["$product.variants", 0] } },
+                in: {
+                  $let: {
+                    vars: { firstSize: { $arrayElemAt: ["$$firstVariant.sizes", 0] } },
+                    in: { $ifNull: ["$$firstSize.salePrice", null] },
+                  },
+                },
+              },
+            },
+          },
+        },
+      ]);
+
+      const products = agg.map((p) => ({
+        productId: p.productId?.toString ? p.productId.toString() : p.productId,
+        name: p.name,
+        image: p.image || null,
+        price: p.price ?? null,
+        salePrice: p.salePrice ?? null,
+        totalSold: p.totalSold ?? 0,
+      }));
+
+      return {
+        labels: products.map((p) => p.name),
+        data: products.map((p) => p.totalSold),
+        products,
+      };
+    } catch (err) {
+      throw err;
+    }
   }
 
 }

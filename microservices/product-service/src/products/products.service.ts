@@ -13,6 +13,9 @@ import { Category } from '../schemas/category.schema';
 import { Rating } from '../schemas/rating.schema';
 import { RatingDto } from './dto/rating.dto';
 import * as crypto from 'crypto';
+import { AxiosResponse } from 'node_modules/axios/index.cjs';
+import { firstValueFrom } from 'rxjs';
+import { HttpService } from '@nestjs/axios';
 
 
 
@@ -25,27 +28,23 @@ export class ProductsService {
         @InjectModel(Category.name) private categoryModel: Model<Category>,
         @InjectConnection() private readonly connection: Connection,
         private cloudinaryService: CloudinaryService,
+        private readonly httpService: HttpService,
         private redisService: RedisService,
     ) { }
 
-    async createRating(ratingDto: RatingDto): Promise<Product> {
+    async createRating(ratingDto: any): Promise<Product> {
         const product = await this.productModel.findById(ratingDto.productId).exec();
         if (!product) {
             throw new NotFoundException('Product does not exist.');
         }
 
-        const existingRating = product.ratings.find(
-            (r) => r.userId.toString() === ratingDto.userId.toString(),
-        );
-
-        if (existingRating) {
-            throw new BadRequestException('You have already rated this product.');
-        }
-
+        const url = `http://user-service:3000/users/${ratingDto.userId}`;
+        const res = await firstValueFrom(this.httpService.get(url));
         const newRating = {
             userId: ratingDto.userId,
             rating: ratingDto.rating,
             comment: ratingDto.comment,
+            userName: res.data.name
         } as Rating;
 
         product.ratings.push(newRating);
@@ -470,11 +469,6 @@ export class ProductsService {
     }
 
     async findOne(id: string): Promise<Product> {
-        const cachedProduct = await this.redisService.get(`product:${id}`);
-        if (cachedProduct) {
-            return JSON.parse(cachedProduct);
-        }
-
         const product = await this.productModel
             .findById(id)
             .populate('category', 'name')
@@ -483,8 +477,6 @@ export class ProductsService {
         if (!product) {
             throw new NotFoundException('Product does not exist.');
         }
-
-        await this.redisService.set(`product:${id}`, JSON.stringify(product), 60 * 5);
         return product;
     }
 
