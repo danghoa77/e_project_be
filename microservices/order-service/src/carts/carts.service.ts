@@ -13,6 +13,7 @@ import { firstValueFrom } from 'rxjs';
 import { RedisService } from '@app/common-auth';
 
 
+
 interface ProductVariantSize {
   _id: string;
   size: string;
@@ -27,11 +28,16 @@ interface ProductVariant {
   sizes: ProductVariantSize[];
 }
 
+
 interface ProductData {
   _id: string;
   name: string;
   images: { url: string }[];
   variants: ProductVariant[];
+  category: {
+    _id: string;
+    name: string;
+  };
 }
 
 @Injectable()
@@ -134,12 +140,12 @@ export class CartsService {
           sizeOption.salePrice && sizeOption.salePrice > 0
             ? sizeOption.salePrice
             : sizeOption.price;
-
         return {
           productId: product._id,
           name: product.name,
           variantId: variant._id,
           sizeId: sizeOption._id,
+          categoryId: product.category._id,
           imageUrl: product.images[0]?.url,
           size: sizeOption.size,
           color: variant.color,
@@ -158,7 +164,7 @@ export class CartsService {
     userId: string,
     addItemDto: AddToCartDto,
   ): Promise<CartDocument> {
-    const { productId, variantId, sizeId, quantity } = addItemDto;
+    const { productId, variantId, sizeId, quantity, categoryId } = addItemDto;
 
     if (!productId || !variantId || !sizeId || !quantity || quantity <= 0) {
       throw new BadRequestException('Invalid addItemDto payload.');
@@ -177,7 +183,8 @@ export class CartsService {
       (item) =>
         item.productId.toString() === productId &&
         item.variantId === variantId &&
-        item.sizeId === sizeId,
+        item.sizeId === sizeId &&
+        item.categoryId === categoryId
     );
 
     if (existingItem) {
@@ -193,6 +200,7 @@ export class CartsService {
         productId: new Types.ObjectId(productId),
         variantId,
         sizeId,
+        categoryId,
         quantity,
       });
     }

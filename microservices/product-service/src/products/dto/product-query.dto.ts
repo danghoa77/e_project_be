@@ -41,7 +41,7 @@ export class ProductQueryDto {
   @IsOptional()
   @IsString({ message: 'Sort by must be a string.' })
   @IsIn(
-    ['price', '-price', 'createdAt', '-createdAt', 'name', '-name'],
+    ['price', '-price', 'createdAt', '-createdAt'],
     { message: 'Invalid sort value.' }
   )
   sortBy?: string = 'createdAt';

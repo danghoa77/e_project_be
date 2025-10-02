@@ -8,28 +8,20 @@ import {
   Param,
   Put,
   NotFoundException,
-  ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { JwtAuthGuard } from '@app/common-auth';
-import { Request } from 'express';
-
-
 
 @UseGuards(JwtAuthGuard)
 @Controller('orders')
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) { }
 
-  // @Role('customer')
   @Post()
-  async createOrder(
-    @Req() req: any,
-    @Body() createOrderDto: CreateOrderDto,
-  ) {
+  async createOrder(@Req() req: any, @Body() createOrderDto: CreateOrderDto) {
     return this.ordersService.createOrder(req.user.userId, createOrderDto);
   }
 
@@ -41,16 +33,19 @@ export class OrdersController {
     return this.ordersService.findOrdersByUserId(req.user.userId);
   }
 
-  // @Get('all')
-  // async getAllOrders(@Req() req: any) {
-  //   return this.ordersService.findAllOrders();
-  // }
-  //search
+  @Get('top-categories')
+  async getTopCategories() {
+    return this.ordersService.getTopCategories();
+  }
+
+
+  @Get('dashboard')
+  async getDashboardStats() {
+    return this.ordersService.getDashboardStats();
+  }
+
   @Get(':id')
-  async getOrderById(
-    @Req() req: any,
-    @Param('id') id: string,
-  ) {
+  async getOrderById(@Req() req: any, @Param('id') id: string) {
     const order = await this.ordersService.findOrderById(id);
     if (
       req.user.role !== 'admin' &&
@@ -64,14 +59,10 @@ export class OrdersController {
   }
 
   @Put(':id/cancel')
-  async cancelOrder(
-    @Req() req: any,
-    @Param('id') id: string,
-  ) {
+  async cancelOrder(@Param('id') id: string) {
     return this.ordersService.cancelOrder(id);
   }
 
-  // @Role('admin')
   @Put(':id/status')
   async updateOrderStatus(
     @Param('id') id: string,
@@ -83,16 +74,14 @@ export class OrdersController {
       'delivered',
       'cancelled',
     ] as const;
+
     if (!allowedStatuses.includes(updateStatusDto.status as any)) {
       throw new NotFoundException('Invalid status to update.');
     }
+
     return this.ordersService.updateOrderStatus(
       id,
-      updateStatusDto.status as
-      | 'confirmed'
-      | 'shipped'
-      | 'delivered'
-      | 'cancelled',
+      updateStatusDto.status,
     );
   }
 
@@ -102,7 +91,10 @@ export class OrdersController {
     @Param('paymentMethod') paymentMethod: 'CASH' | 'VNPAY' | 'MOMO',
   ) {
     try {
-      return await this.ordersService.changePaymentMethod(orderId, paymentMethod);
+      return await this.ordersService.changePaymentMethod(
+        orderId,
+        paymentMethod,
+      );
     } catch (error) {
       throw new BadRequestException(error.message);
     }

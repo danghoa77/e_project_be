@@ -11,7 +11,7 @@ import { plainToClass } from 'class-transformer';
 import * as bcrypt from 'bcryptjs';
 import { RedisService } from '@app/common-auth';
 import { UpdateUserDto } from './dto/update-user.dto';
-
+import * as moment from "moment";
 @Injectable()
 export class UsersService {
   constructor(
@@ -120,5 +120,63 @@ export class UsersService {
   async deleteUser(userId: string): Promise<void> {
     await this.userModel.findByIdAndDelete(userId);
     await this.redisService.del(`user:${userId}`);
+  }
+
+  async getUserDashboardStats() {
+    const now = new Date();
+
+    const startOfWeek = moment(now).startOf("isoWeek").toDate();
+    const endOfWeek = moment(now).endOf("isoWeek").toDate();
+
+    const startOfMonth = moment(now).startOf("month").toDate();
+    const endOfMonth = moment(now).endOf("month").toDate();
+
+    const [weekly, monthly, overview] = await Promise.all([
+      this.userModel.aggregate([
+        {
+          $match: {
+            role: "customer",
+            createdAt: { $gte: startOfWeek, $lte: endOfWeek },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalUsers: { $sum: 1 },
+          },
+        },
+      ]),
+
+      this.userModel.aggregate([
+        {
+          $match: {
+            role: "customer",
+            createdAt: { $gte: startOfMonth, $lte: endOfMonth },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalUsers: { $sum: 1 },
+          },
+        },
+      ]),
+
+      this.userModel.aggregate([
+        { $match: { role: "customer" } },
+        {
+          $group: {
+            _id: null,
+            totalUsers: { $sum: 1 },
+          },
+        },
+      ]),
+    ]);
+
+    return {
+      overview: overview[0] || { totalUsers: 0 },
+      weekly: weekly[0] || { totalUsers: 0 },
+      monthly: monthly[0] || { totalUsers: 0 },
+    };
   }
 }

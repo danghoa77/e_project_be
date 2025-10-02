@@ -12,6 +12,10 @@ export class AddToCartDto {
 
   @IsNotEmpty()
   @IsString()
+  categoryId: string;
+
+  @IsNotEmpty()
+  @IsString()
   sizeId: string;
 
   @IsNumber()
