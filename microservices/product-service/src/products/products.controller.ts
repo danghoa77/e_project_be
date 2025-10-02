@@ -11,6 +11,7 @@ import {
     UploadedFiles,
     Query,
     BadRequestException,
+    Req,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -43,6 +44,12 @@ export class ProductsController {
         }
 
         return this.productsService.create(parsedDto, files || []);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post('rating')
+    async createRating(@Body() body: RatingDto) {
+        return this.productsService.createRating(body);
     }
 
 
@@ -148,17 +155,12 @@ export class ProductsController {
 
 
     @UseGuards(JwtAuthGuard)
-    @Post('rating')
-    async createRating(@Body() body: RatingDto) {
-        return this.productsService.createRating(body);
-    }
-
-    @UseGuards(JwtAuthGuard)
-    @Delete(':productId/rating/:ratingId')
+    @Delete(':productId/rating')
     async deleteRating(
+        @Req() req: any,
         @Param('productId') productId: string,
-        @Param('ratingId') ratingId: string,
     ) {
-        return this.productsService.deleteRating(productId, ratingId);
+        const userId = req.user.userId;
+        return this.productsService.deleteRating(productId, userId);
     }
 }

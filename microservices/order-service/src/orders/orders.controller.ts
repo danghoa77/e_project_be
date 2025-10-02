@@ -38,6 +38,10 @@ export class OrdersController {
     return this.ordersService.getTopCategories();
   }
 
+  @Get('top-products')
+  async topProducts() {
+    return this.ordersService.topProducts();
+  }
 
   @Get('dashboard')
   async getDashboardStats() {

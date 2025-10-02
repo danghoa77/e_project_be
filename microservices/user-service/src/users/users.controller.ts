@@ -12,16 +12,12 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { JwtAuthGuard } from '@app/common-auth';
+import { JwtAuthGuard, Role, } from '@app/common-auth';
 import { GetUserDto } from './dto/get-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserDocument } from '../schemas/user.schema';
 
-interface AuthenticatedRequest extends Request {
-  user: {
-    userId: string;
-  };
-}
+
 
 @Controller('users')
 export class UsersController {
@@ -29,27 +25,8 @@ export class UsersController {
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  async getProfile(@Request() req: AuthenticatedRequest): Promise<GetUserDto> {
+  async getProfile(@Request() req: any): Promise<GetUserDto> {
     return this.usersService.findUserById(req.user.userId);
-  }
-
-  @Get("dashboard")
-  async getUserDashboardStats() {
-    return this.usersService.getUserDashboardStats();
-  }
-
-  @Patch('me')
-  @UseGuards(JwtAuthGuard)
-  async updateMyProfile(
-    @Req() req: AuthenticatedRequest,
-    @Body() updateUserDto: UpdateUserDto,
-  ) {
-    const userId = req.user.userId;
-    const updatedUser = await this.usersService.updateProfile(
-      userId,
-      updateUserDto,
-    );
-    return updatedUser;
   }
 
   @Get('all')
@@ -57,9 +34,34 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
+  @Get('dashboard')
+  async getUserDashboardStats() {
+    return this.usersService.getUserDashboardStats();
+  }
+
+  @Patch('me')
+  @UseGuards(JwtAuthGuard)
+  async updateMyProfile(
+    @Req() req: any,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    const userId = req.user.userId;
+    return this.usersService.updateProfile(userId, updateUserDto);
+  }
+
+  @Get('admin1st')
+  async getAdmin1st() {
+    return this.usersService.getAdmin1st();
+  }
+
+  @Get(':id')
+  async getUserById(@Param('id') id: string): Promise<GetUserDto> {
+    return this.usersService.findUserById(id);
+  }
+
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
-  async deleteUser(@Req() req: AuthenticatedRequest) {
+  async deleteUser(@Req() req: any) {
     const userId = req.user.userId;
     await this.usersService.deleteUser(userId);
   }
@@ -68,15 +70,11 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteMyAddress(
-    @Req() req: AuthenticatedRequest,
+    @Req() req: any,
     @Param('addressId') addressId: string,
   ): Promise<void> {
     const userId = req.user.userId;
     await this.usersService.deleteAddress(userId, addressId);
   }
-
-  @Get('admin1st')
-  async getAdmin1st() {
-    return this.usersService.getAdmin1st();
-  }
 }
+

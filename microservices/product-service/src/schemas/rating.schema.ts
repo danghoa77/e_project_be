@@ -10,6 +10,9 @@ export class Rating extends Document {
     @Prop({ type: String, required: true })
     userId: string;
 
+    @Prop({ type: String, required: true })
+    userName: string;
+
     @Prop({ type: Number, required: true, min: 0, max: 5 })
     rating: number;
 
