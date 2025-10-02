@@ -12,6 +12,9 @@ export class OrderItem {
   variantId: string;
 
   @Prop({ type: String, required: true })
+  categoryId: string;
+
+  @Prop({ type: String, required: true })
   sizeId: string;
 
   @Prop({ type: String, required: true })

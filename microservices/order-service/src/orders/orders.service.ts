@@ -6,15 +6,12 @@ import {
   Logger,
   ForbiddenException,
 } from '@nestjs/common';
-import { InjectModel, InjectConnection } from '@nestjs/mongoose';
-import { Model, Connection, Types } from 'mongoose';
-import { Order, OrderDocument, OrderItem } from '../schemas/order.schema';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model, PipelineStage } from 'mongoose';
+import { Order } from '../schemas/order.schema';
 import { CreateOrderDto } from './dto/create-order.dto';
-import { HttpService } from '@nestjs/axios';
-import { firstValueFrom } from 'rxjs';
-import { CartsService } from '../carts/carts.service';
 import { RedisService } from '@app/common-auth';
-
+import * as moment from "moment";
 
 @Injectable()
 export class OrdersService {
@@ -118,6 +115,103 @@ export class OrdersService {
       await this.redisService.del(`orders:all`);
     }
     return order;
+  }
+
+  async getDashboardStats() {
+    const now = new Date();
+
+    const startOfWeek = moment(now).startOf("isoWeek").toDate();
+    const endOfWeek = moment(now).endOf("isoWeek").toDate();
+
+    const startOfMonth = moment(now).startOf("month").toDate();
+    const endOfMonth = moment(now).endOf("month").toDate();
+
+    const [weekly, monthly, overview] = await Promise.all([
+      this.orderModel.aggregate([
+        {
+          $match: {
+            status: "confirmed",
+            createdAt: { $gte: startOfWeek, $lte: endOfWeek },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalOrders: { $sum: 1 },
+            totalRevenue: { $sum: "$totalPrice" },
+          },
+        },
+      ]),
+
+      this.orderModel.aggregate([
+        {
+          $match: {
+            status: "confirmed",
+            createdAt: { $gte: startOfMonth, $lte: endOfMonth },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalOrders: { $sum: 1 },
+            totalRevenue: { $sum: "$totalPrice" },
+          },
+        },
+      ]),
+
+      this.orderModel.aggregate([
+        { $match: { status: "confirmed" } },
+        {
+          $group: {
+            _id: null,
+            totalOrders: { $sum: 1 },
+            totalRevenue: { $sum: "$totalPrice" },
+          },
+        },
+      ]),
+    ]);
+
+    return {
+      overview: overview[0] || { totalOrders: 0, totalRevenue: 0 },
+      weekly: weekly[0] || { totalOrders: 0, totalRevenue: 0 },
+      monthly: monthly[0] || { totalOrders: 0, totalRevenue: 0 },
+    };
+  }
+
+  async getTopCategories(limit = 5) {
+    const topCategories = await this.orderModel.aggregate([
+      { $match: { status: "confirmed" } },
+      { $unwind: "$items" },
+      {
+        $group: {
+          _id: "$items.categoryId",
+          totalQuantity: { $sum: "$items.quantity" }
+        }
+      },
+      { $sort: { totalQuantity: -1 } },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "_id",
+          foreignField: "_id",
+          as: "category"
+        }
+      },
+      { $unwind: "$category" },
+      {
+        $project: {
+          _id: 0,
+          name: "$category.name",
+          totalQuantity: 1
+        }
+      }
+    ]);
+
+    const labels = topCategories.map(c => c.name);
+    const data = topCategories.map(c => c.totalQuantity);
+
+    return { labels, data };
   }
 
 }

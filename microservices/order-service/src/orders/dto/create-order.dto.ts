@@ -1,7 +1,7 @@
 // order-service/src/orders/dto/create-order.dto.ts
 import { IsNotEmpty, IsNumber, IsString, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
-import { OrderDto } from '../../carts/dto/order.dto';
+import { OrderDto } from './order.dto';
 
 
 class ShippingAddressDto {

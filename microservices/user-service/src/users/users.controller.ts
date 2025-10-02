@@ -33,6 +33,11 @@ export class UsersController {
     return this.usersService.findUserById(req.user.userId);
   }
 
+  @Get("dashboard")
+  async getUserDashboardStats() {
+    return this.usersService.getUserDashboardStats();
+  }
+
   @Patch('me')
   @UseGuards(JwtAuthGuard)
   async updateMyProfile(

@@ -63,7 +63,6 @@ export class Product extends Document {
     @Prop({ type: Types.ObjectId, ref: Category.name, required: true })
     category: Types.ObjectId;
 
-
     @Prop({ type: [ColorVariantSchema], default: [] })
     variants: ColorVariant[];
 

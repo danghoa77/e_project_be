@@ -12,6 +12,10 @@ import { UpdateStockItemDto } from './dto/update-stock-item.dto';
 import { Category } from '../schemas/category.schema';
 import { Rating } from '../schemas/rating.schema';
 import { RatingDto } from './dto/rating.dto';
+import * as crypto from 'crypto';
+
+
+
 
 @Injectable()
 export class ProductsService {
@@ -23,7 +27,6 @@ export class ProductsService {
         private cloudinaryService: CloudinaryService,
         private redisService: RedisService,
     ) { }
-
 
     async createRating(ratingDto: RatingDto): Promise<Product> {
         const product = await this.productModel.findById(ratingDto.productId).exec();
@@ -47,6 +50,7 @@ export class ProductsService {
 
         product.ratings.push(newRating);
         await this.updateProductRating(product);
+        await this.redisService.delByPrefix('products:');
 
         return product.save();
     }
@@ -68,6 +72,7 @@ export class ProductsService {
 
         product.ratings.splice(ratingIndex, 1);
         await this.updateProductRating(product);
+        await this.redisService.delByPrefix('products:');
 
         return product.save();
     }
@@ -82,9 +87,9 @@ export class ProductsService {
         } else {
             product.averageRating = 0;
         }
+        await this.redisService.delByPrefix('products:');
+
     }
-
-
 
     async createCategory(name: string): Promise<Category> {
         try {
@@ -112,7 +117,6 @@ export class ProductsService {
             throw new BadRequestException('Could not update category');
         }
     }
-
 
     async deleteCategory(id: string): Promise<{ message: string }> {
         try {
@@ -143,6 +147,9 @@ export class ProductsService {
     }
 
 
+
+
+
     async create(createProductDto: CreateProductDto, files: Array<Express.Multer.File>): Promise<Product> {
 
         if (createProductDto.category) {
@@ -170,7 +177,8 @@ export class ProductsService {
         }
         const createdProduct = await newProduct.save();
         this.logger.log(`Created product: ${createdProduct}`);
-        await this.redisService.del('products:all');
+        await this.redisService.delByPrefix('products:');
+
         return createdProduct;
     }
 
@@ -218,11 +226,10 @@ export class ProductsService {
         );
 
         await this.redisService.del(`product:${productId}`);
-        await this.redisService.del('products:all');
+        await this.redisService.delByPrefix('products:');
 
         return updatedProduct;
     }
-
 
     async decreaseStockForOrder(items: UpdateStockItemDto[]): Promise<{ message: string }> {
         try {
@@ -257,7 +264,7 @@ export class ProductsService {
                 }
             }
 
-            await this.redisService.del('products:all');
+            await this.redisService.delByPrefix('products:');
             this.logger.log('Stock updated successfully and cache cleared.');
             return { message: 'Stock updated successfully' };
         } catch (error) {
@@ -280,7 +287,10 @@ export class ProductsService {
             sortBy,
         } = query;
 
-        const cacheKey = `products:all`;
+        // const cacheKey = `products:all`;
+        const queryString = JSON.stringify(query);
+        const queryHash = crypto.createHash('md5').update(queryString).digest('hex');
+        const cacheKey = `products:${queryHash}`;
 
 
         const cachedProducts = await this.redisService.get(cacheKey);
@@ -305,10 +315,17 @@ export class ProductsService {
         const skip = (page - 1) * limit;
 
         let sort: any = { createdAt: -1 };
+
         if (sortBy) {
-            sort = sortBy.startsWith('-')
-                ? { [sortBy.substring(1)]: -1 }
-                : { [sortBy]: 1 };
+            if (sortBy === 'price') {
+                sort = { 'variants.sizes.price': 1 }; // asc
+            } else if (sortBy === '-price') {
+                sort = { 'variants.sizes.price': -1 }; // desc
+            } else if (sortBy.startsWith('-')) {
+                sort = { [sortBy.substring(1)]: -1 };
+            } else {
+                sort = { [sortBy]: 1 };
+            }
         }
 
         const [products, total] = await Promise.all([
@@ -327,12 +344,10 @@ export class ProductsService {
             JSON.stringify({ products, total }),
             60 * 5,
         );
-        await this.redisService.del('products:cacheInvalidated');
 
         this.logger.log(`DB queried, cached ${products.length} products`);
         return { products, total };
     }
-
 
     async update(
         id: string,
@@ -449,11 +464,10 @@ export class ProductsService {
 
         await product.save();
         await this.redisService.del(`product:${id}`);
-        await this.redisService.del('products:all');
+        await this.redisService.delByPrefix('products:');
+
         return product;
     }
-
-
 
     async findOne(id: string): Promise<Product> {
         const cachedProduct = await this.redisService.get(`product:${id}`);
@@ -473,6 +487,7 @@ export class ProductsService {
         await this.redisService.set(`product:${id}`, JSON.stringify(product), 60 * 5);
         return product;
     }
+
     async remove(id: string): Promise<any> {
         const product = await this.productModel.findById(id).exec();
         if (!product) {
@@ -486,6 +501,7 @@ export class ProductsService {
 
         await this.productModel.deleteOne({ _id: id }).exec();
         await this.redisService.del(`product:${id}`);
-        await this.redisService.del('products:all');
+        await this.redisService.delByPrefix('products:');
+
     }
 }

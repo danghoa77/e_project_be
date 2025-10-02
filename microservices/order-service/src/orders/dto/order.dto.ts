@@ -16,6 +16,10 @@ export class OrderDto {
 
     @IsNotEmpty()
     @IsString()
+    categoryId: string;
+
+    @IsNotEmpty()
+    @IsString()
     name: string;
 
     @IsNotEmpty()

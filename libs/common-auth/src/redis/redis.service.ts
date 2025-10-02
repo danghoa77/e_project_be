@@ -5,7 +5,7 @@ import { Redis } from 'ioredis';
 export class RedisService implements OnModuleDestroy {
   private readonly logger = new Logger(RedisService.name);
 
-  constructor(@Inject('REDIS_CLIENT') private readonly redisClient: Redis) {}
+  constructor(@Inject('REDIS_CLIENT') private readonly redisClient: Redis) { }
 
   async set(
     key: string,
@@ -36,8 +36,12 @@ export class RedisService implements OnModuleDestroy {
     await this.redisClient.quit();
   }
 
-  // Phương thức để truy cập trực tiếp client nếu cần
-  getClient(): Redis {
-    return this.redisClient;
+  async delByPrefix(prefix: string): Promise<number> {
+    const keys = await this.redisClient.keys(`${prefix}*`);
+    if (keys.length > 0) {
+      this.logger.log(`DEL by prefix=${prefix}, keys=${keys.length}`);
+      return this.redisClient.del(keys);
+    }
+    return 0;
   }
 }

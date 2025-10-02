@@ -13,6 +13,9 @@ export class CartItem {
   @Prop({ type: String, required: true })
   sizeId: string;
 
+  @Prop({ type: String, required: true })
+  categoryId: string;
+
   @Prop({ type: Number, required: true, min: 1 })
   quantity: number;
 
