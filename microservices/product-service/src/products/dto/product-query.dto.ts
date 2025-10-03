@@ -3,6 +3,10 @@ import { Type } from 'class-transformer';
 
 export class ProductQueryDto {
   @IsOptional()
+  @IsString({ message: 'Search term must be a string.' })
+  search?: string;
+  
+  @IsOptional()
   @IsString({ message: 'Category must be a string.' })
   category?: string;
 

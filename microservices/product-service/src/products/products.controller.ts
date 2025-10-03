@@ -85,7 +85,6 @@ export class ProductsController {
         if (errors.length > 0) {
             throw new BadRequestException(errors);
         }
-
         return this.productsService.update(id, dtoInstance, files);
     }
 
