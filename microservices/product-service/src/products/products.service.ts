@@ -276,6 +276,7 @@ export class ProductsService {
         query: ProductQueryDto,
     ): Promise<{ products: Product[]; total: number }> {
         const {
+            search,
             category,
             priceMin,
             priceMax,
@@ -300,6 +301,10 @@ export class ProductsService {
         }
 
         const filter: any = {};
+
+        if (search) {
+            filter.$text = { $search: search };
+        }
 
         if (category) filter.category = category;
         if (color) filter['variants.color'] = color;
