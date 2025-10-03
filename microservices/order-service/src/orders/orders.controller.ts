@@ -15,16 +15,18 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { JwtAuthGuard } from '@app/common-auth';
 
-@UseGuards(JwtAuthGuard)
+
 @Controller('orders')
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) { }
 
+  @UseGuards(JwtAuthGuard)
   @Post()
   async createOrder(@Req() req: any, @Body() createOrderDto: CreateOrderDto) {
     return this.ordersService.createOrder(req.user.userId, createOrderDto);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get()
   async getOrders(@Req() req: any) {
     if (req.user.role === 'admin') {
@@ -43,11 +45,13 @@ export class OrdersController {
     return this.ordersService.topProducts();
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('dashboard')
   async getDashboardStats() {
     return this.ordersService.getDashboardStats();
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get(':id')
   async getOrderById(@Req() req: any, @Param('id') id: string) {
     const order = await this.ordersService.findOrderById(id);
@@ -62,11 +66,14 @@ export class OrdersController {
     return order;
   }
 
+  @UseGuards(JwtAuthGuard)
   @Put(':id/cancel')
   async cancelOrder(@Param('id') id: string) {
     return this.ordersService.cancelOrder(id);
   }
 
+
+  @UseGuards(JwtAuthGuard)
   @Put(':id/status')
   async updateOrderStatus(
     @Param('id') id: string,
@@ -89,6 +96,7 @@ export class OrdersController {
     );
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post(':orderId/:paymentMethod')
   async changePaymentMethod(
     @Param('orderId') orderId: string,
