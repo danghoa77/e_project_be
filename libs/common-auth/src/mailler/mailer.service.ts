@@ -52,7 +52,6 @@ export class MailerService {
     }
 
     try {
-      // Cast the result to our safe interface to avoid 'any' type issues
       const result = (await this.transporter.sendMail({
         from: `"${fromDisplayName}" <${fromAddress}>`,
         to,
@@ -60,7 +59,6 @@ export class MailerService {
         html,
       })) as SafeEmailResult;
 
-      // Check if messageId exists and is a string
       if (result.messageId && typeof result.messageId === 'string') {
         this.logger.log(
           `Mail sent successfully to ${to}. Message ID: ${result.messageId}`,
