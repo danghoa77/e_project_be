@@ -49,6 +49,9 @@ export class OrdersService {
       const res = await order.save();
       if (res) {
         const order = await this.orderModel.findById(orderId).lean();
+        if (!order) {
+          throw new NotFoundException(`Order with id ${orderId} not found`);
+        }
         const user = order.userId
         const url = `http://user-service:3000/users/${user}`;
         const res = await firstValueFrom(this.httpService.get(url));
