@@ -111,7 +111,7 @@ export class PaymentsService {
                 );
 
                 this.logger.log(
-                    ` Notified order-service successfully: ${JSON.stringify(response.data)}`,
+                    `✅ Notified order-service successfully: ${JSON.stringify(response.data)}`,
                 );
             } catch (err: any) {
                 this.logger.error(
@@ -127,10 +127,6 @@ export class PaymentsService {
 
         return { responseCode };
     }
-
-    const handleSendMail(
-
-    )
 
     async createMomoPayment(orderId: string, amountUsd: number, userId: string) {
         const partnerCode = this.configService.get<string>('MOMO_PARTNER_CODE');
@@ -209,10 +205,8 @@ export class PaymentsService {
 
     async handleMomoURL(resultCode: string, orderId: string, token: string) {
         if (resultCode === '0') {
-            const res = await this.paymentModel.updateOne({ orderId }, { status: 'SUCCESS' });
-            if (res) {
+            await this.paymentModel.updateOne({ orderId }, { status: 'SUCCESS' });
 
-            }
             try {
                 const method = 'MOMO';
                 const url = `http://order-service:3000/orders/${orderId}/${method}`;
