@@ -10,14 +10,20 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, PipelineStage } from 'mongoose';
 import { Order } from '../schemas/order.schema';
 import { CreateOrderDto } from './dto/create-order.dto';
-import { RedisService } from '@app/common-auth';
+import { RedisService, MailerService } from '@app/common-auth';
+import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
 import * as moment from "moment";
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class OrdersService {
   constructor(
     @InjectModel(Order.name) private readonly orderModel: Model<Order>,
     private readonly redisService: RedisService,
+    private readonly mailerService: MailerService,
+    private readonly httpService: HttpService,
+    private readonly configService: ConfigService,
   ) { }
 
   async createOrder(userId: string, createOrderDto: CreateOrderDto) {
@@ -40,9 +46,25 @@ export class OrdersService {
       }
       order.paymentMethod = paymentMethod;
       order.status = 'confirmed';
-      await order.save();
-      await this.redisService.del(`order:${orderId}`);
-      return order;
+      const res = await order.save();
+      if (res) {
+        const order = await this.orderModel.findById(orderId).lean();
+        const user = order.userId
+        const url = `http://user-service:3000/users/${user}`;
+        const res = await firstValueFrom(this.httpService.get(url));
+        const email = res.data.email;
+        const name = res.data.name;
+        await this.mailerService.sendMail({
+          to: email,
+          subject: 'Welcome to Our Service',
+          html: `<p>Dear ${name},</p><p>Your order has been confirmed, please check your phone for a call from the delivery unit</p>
+          <p>Thank you for order products from our service</p>`,
+          from: this.configService.get<string>('MAIL_FROM') || '',
+        });
+        await this.redisService.del(`order:${orderId}`);
+        return order;
+      }
+
     }
     catch (err) { throw new BadRequestException(err.message) }
   }

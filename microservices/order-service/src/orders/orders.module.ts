@@ -5,13 +5,14 @@ import { Order, OrderSchema } from '../schemas/order.schema';
 import { OrdersService } from './orders.service';
 import { OrdersController } from './orders.controller';
 import { HttpModule } from '@nestjs/axios';
-import { RedisModule } from '@app/common-auth';
+import { RedisModule, MailerModule } from '@app/common-auth';
 import { CartsModule } from '../carts/carts.module';
 import { CommonAuthModule } from '@app/common-auth';
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Order.name, schema: OrderSchema }]),
     HttpModule,
+    MailerModule,
     RedisModule,
     CartsModule,
     CommonAuthModule,
@@ -20,4 +21,4 @@ import { CommonAuthModule } from '@app/common-auth';
   providers: [OrdersService],
   exports: [OrdersService],
 })
-export class OrdersModule {}
+export class OrdersModule { }
