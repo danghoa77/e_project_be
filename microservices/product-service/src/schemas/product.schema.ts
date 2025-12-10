@@ -1,7 +1,7 @@
 // product.schema.ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
-import { Rating, RatingSchema } from './rating.schema';
+import { Rating } from './rating.schema';
 import { Category } from './category.schema';
 @Schema({ _id: false })
 export class Image {
@@ -66,7 +66,7 @@ export class Product extends Document {
     @Prop({ type: [ColorVariantSchema], default: [] })
     variants: ColorVariant[];
 
-    @Prop({ type: [RatingSchema], default: [] })
+    @Prop({ type: [Rating], default: [] })
     ratings: Rating[];
 
     @Prop({ type: Number, default: 0 })

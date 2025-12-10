@@ -31,17 +31,19 @@ export class AuthController {
     private readonly logger: Logger,
   ) { }
 
-  @Post('google/token')
-  @HttpCode(HttpStatus.OK)
-  async googleLoginWithToken(@Body() idToken: string) {
-    const { access_token } = await this.authService.loginWithGoogleToken(idToken);
-    return { access_token: access_token };
-  }
+  // @Post('google/token')
+  // @HttpCode(HttpStatus.OK)
+  // async googleLoginWithToken(@Body() idToken: string) {
+  //   const { access_token } = await this.authService.loginWithGoogleToken(idToken);
+  //   return { access_token: access_token };
+  // }
 
 
   @Get('google')
   @UseGuards(AuthGuard('google'))
   async googleAuth() { /* Passport handles the redirect */ }
+
+
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
   async googleAuthRedirect(@Req() req: Request, @Res() res: Response) {

@@ -19,5 +19,3 @@ export class Rating extends Document {
     @Prop({ type: String })
     comment?: string;
 }
-
-export const RatingSchema = SchemaFactory.createForClass(Rating);
