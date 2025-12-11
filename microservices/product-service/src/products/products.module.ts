@@ -4,7 +4,6 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ProductsService } from './products.service';
 import { ProductsController } from './products.controller';
 import { Category, CategorySchema } from '../schemas/category.schema';
-import { Rating, RatingSchema } from '../schemas/rating.schema';
 import { HttpModule } from '@nestjs/axios';
 import { Product, ProductSchema } from '../schemas/product.schema';
 import { CloudinaryModule } from '../cloudinary/cloudinary.module';
@@ -17,7 +16,6 @@ import { CommonAuthModule } from '@app/common-auth';
         MongooseModule.forFeature([
             { name: Product.name, schema: ProductSchema },
             { name: Category.name, schema: CategorySchema },
-            { name: Rating.name, schema: RatingSchema },
         ]),
         CloudinaryModule,
         RedisModule,
