@@ -10,7 +10,6 @@ import {
   RedisModule,
   JwtStrategy,
   MailerModule,
-  GoogleAuthService,
   GoogleStrategy,
 } from '@app/common-auth';
 
@@ -38,7 +37,6 @@ import {
     LocalStrategy,
     JwtStrategy,
     GoogleStrategy,
-    GoogleAuthService,
     Logger
   ],
 })

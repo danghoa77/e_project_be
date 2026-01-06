@@ -7,7 +7,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { RedisModule } from './redis/redis.module';
 import { TalkjsModule } from './talkjs/talkjs.module';
 import { GoogleStrategy } from './strategies/google.strategy';
-import { GoogleAuthService } from './auth-providers/google-auth.service';
+
 @Module({
   imports: [
     ConfigModule,
@@ -26,14 +26,13 @@ import { GoogleAuthService } from './auth-providers/google-auth.service';
     TalkjsModule,
   ],
 
-  providers: [JwtStrategy, GoogleStrategy, GoogleAuthService],
+  providers: [JwtStrategy, GoogleStrategy],
   exports: [
     PassportModule,
     JwtModule,
     JwtStrategy,
     RedisModule,
     TalkjsModule,
-    GoogleAuthService,
   ],
 })
 export class CommonAuthModule {}
