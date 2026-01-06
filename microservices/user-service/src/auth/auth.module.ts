@@ -40,4 +40,4 @@ import {
     Logger
   ],
 })
-export class AuthModule {}
+export class AuthModule { }
