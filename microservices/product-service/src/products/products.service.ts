@@ -1,3 +1,4 @@
+import { Multer } from 'multer';
 // product-service/src/products/products.service.ts
 import { Injectable, NotFoundException, BadRequestException, Logger, Inject } from '@nestjs/common';
 import { InjectModel, InjectConnection } from '@nestjs/mongoose';
@@ -149,7 +150,7 @@ export class ProductsService {
 
 
 
-    async create(createProductDto: CreateProductDto, files: Array<Express.Multer.File>): Promise<Product> {
+    async create(createProductDto: CreateProductDto, files: Multer.File[]): Promise<Product> {
 
         if (createProductDto.category) {
             const categoryExists = await this.categoryModel.findById(createProductDto.category).exec();
@@ -356,7 +357,7 @@ export class ProductsService {
     async update(
         id: string,
         updateProductDto: UpdateProductDto,
-        files?: Express.Multer.File[],
+        files?: Multer.File[],
     ): Promise<Product> {
         const product = await this.productModel.findById(id).exec();
         if (!product) throw new NotFoundException('Product not found');
