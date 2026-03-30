@@ -25,126 +25,27 @@ services:
     networks:
       - ecommerce-network
 
-  # User Service
-  user-service:
+  # Unified Monolith Service
+  monolith:
     build:
       context: .
-      dockerfile: microservices/user-service/Dockerfile
-      target: builder
-    container_name: user-service
-    env_file:
-      - ./.env
-    command: npm run dev:user
-    ports:
-      - '3001:3000'
-    volumes:
-      - ./microservices/user-service:/usr/src/app/microservices/user-service
-      - ./libs:/usr/src/app/libs
-      - /usr/src/app/node_modules
-      - /usr/src/app/dist
-    environment:
-      - NODE_ENV=development
-    depends_on:
-      - mongodb
-      - redis
-    networks:
-      - ecommerce-network
-
-  # Product Service
-  product-service:
-    build:
-      context: .
-      dockerfile: microservices/product-service/Dockerfile
-      target: builder
-    container_name: product-service
-    env_file:
-      - ./.env
-    command: npm run dev:product
-    ports:
-      - '3002:3000'
-    volumes:
-      - ./microservices/product-service:/usr/src/app/microservices/product-service
-      - ./libs:/usr/src/app/libs
-      - /usr/src/app/node_modules
-      - /usr/src/app/dist
-    environment:
-      - NODE_ENV=development
-    depends_on:
-      - mongodb
-      - redis
-      - user-service
-    networks:
-      - ecommerce-network
-
-  # Order Service
-  order-service:
-    build:
-      context: .
-      dockerfile: microservices/order-service/Dockerfile
-      target: builder
-    container_name: order-service
-    env_file:
-      - ./.env
-    command: npm run dev:order
-    ports:
-      - '3003:3000'
-    volumes:
-      - ./microservices/order-service:/usr/src/app/microservices/order-service
-      - ./libs:/usr/src/app/libs
-      - /usr/src/app/node_modules
-      - /usr/src/app/dist
-    environment:
-      - NODE_ENV=development
-    depends_on:
-      - mongodb
-      - redis
-      - product-service
-      - user-service
-    networks:
-      - ecommerce-network
-
-  # Payment Service
-  payment-service:
-    build:
-      context: .
-      dockerfile: microservices/payment-service/Dockerfile
-      target: builder
-    container_name: payment-service
-    env_file:
-      - ./.env
-    command: npm run dev:payment
-    ports:
-      - '3004:3000'
-    volumes:
-      - ./microservices/payment-service:/usr/src/app/microservices/payment-service
-      - ./libs:/usr/src/app/libs
-      - /usr/src/app/node_modules
-      - /usr/src/app/dist
-    environment:
-      - NODE_ENV=development
-    depends_on:
-      - mongodb
-      - redis
-      - order-service
-    networks:
-      - ecommerce-network
-
-  # Nginx API Gateway
-  api-gateway:
-    build:
-      context: ./api-gateway
       dockerfile: Dockerfile
-    container_name: api-gateway
+    container_name: monolith-service
+    env_file:
+      - ./.env
+    # command: npm run dev:monolith # Uncomment for development with hot-reload
     ports:
-      - '80:80'
-      - '443:443'
+      - '3000:3000'
     volumes:
-      - ./api-gateway/nginx.conf:/etc/nginx/nginx.conf
+      - ./microservices:/usr/src/app/microservices
+      - ./libs:/usr/src/app/libs
+      - /usr/src/app/node_modules
+      - /usr/src/app/dist
+    environment:
+      - NODE_ENV=development
     depends_on:
-      - user-service
-      - product-service
-      - order-service
-      - payment-service
+      - mongodb
+      - redis
     networks:
       - ecommerce-network
 

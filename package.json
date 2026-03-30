@@ -7,6 +7,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
+    "build:monolith": "nest build monolith",
     "build:user-service": "nest build user-service",
     "build:product-service": "nest build product-service",
     "build:order-service": "nest build order-service",
@@ -29,7 +30,8 @@
     "dev:user": "nest start user-service --watch",
     "dev:product": "nest start product-service --watch",
     "dev:order": "nest start order-service --watch",
-    "dev:payment": "nest start payment-service --watch"
+    "dev:payment": "nest start payment-service --watch",
+    "dev:monolith": "nest start monolith --watch"
   },
   "dependencies": {
     "@nestjs-modules/mailer": "^2.0.2",

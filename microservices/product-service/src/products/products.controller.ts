@@ -34,7 +34,7 @@ export class ProductsController {
     @Role('admin')
     @UseInterceptors(FilesInterceptor('images', 5))
     async create(
-        @UploadedFiles() files: Multer.File[],
+        @UploadedFiles() files: Express.Multer.File[],
         @Body('dto') dto: string
     ) {
         let parsedDto: CreateProductDto;
@@ -70,7 +70,7 @@ export class ProductsController {
     @UseInterceptors(FilesInterceptor('images', 5))
     async update(
         @Param('id') id: string,
-        @UploadedFiles() files: Multer.File[],
+        @UploadedFiles() files: Express.Multer.File[],
         @Body('dto') dto: string,
     ) {
         let parsedDto: UpdateProductDto;

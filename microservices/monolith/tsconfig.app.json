@@ -1,0 +1,20 @@
+{
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+        "declaration": false,
+        "outDir": "../../dist/microservices/monolith"
+    },
+    "include": [
+        "src/**/*",
+        "../user-service/src/**/*",
+        "../product-service/src/**/*",
+        "../order-service/src/**/*",
+        "../payment-service/src/**/*"
+    ],
+    "exclude": [
+        "node_modules",
+        "dist",
+        "test",
+        "**/*spec.ts"
+    ]
+}

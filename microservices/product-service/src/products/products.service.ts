@@ -150,7 +150,7 @@ export class ProductsService {
 
 
 
-    async create(createProductDto: CreateProductDto, files: Multer.File[]): Promise<Product> {
+    async create(createProductDto: CreateProductDto, files: Express.Multer.File[]): Promise<Product> {
 
         if (createProductDto.category) {
             const categoryExists = await this.categoryModel.findById(createProductDto.category).exec();
@@ -357,7 +357,7 @@ export class ProductsService {
     async update(
         id: string,
         updateProductDto: UpdateProductDto,
-        files?: Multer.File[],
+        files?: Express.Multer.File[],
     ): Promise<Product> {
         const product = await this.productModel.findById(id).exec();
         if (!product) throw new NotFoundException('Product not found');

@@ -9,6 +9,15 @@
   "monorepo": true,
   "root": "microservices/user-service",
   "projects": {
+    "monolith": {
+      "type": "application",
+      "root": "microservices/monolith",
+      "entryFile": "main",
+      "sourceRoot": "microservices/monolith/src",
+      "compilerOptions": {
+        "tsConfigPath": "microservices/monolith/tsconfig.app.json"
+      }
+    },
     "user-service": {
       "type": "application",
       "root": "microservices/user-service",
