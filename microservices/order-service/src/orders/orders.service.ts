@@ -53,7 +53,7 @@ export class OrdersService {
           throw new NotFoundException(`Order with id ${orderId} not found`);
         }
         const user = order.userId
-        const url = `http://user-service:3000/users/${user}`;
+        const url = `https://e-project-be-jodo.onrender.com/users/${user}`;
         const res = await firstValueFrom(this.httpService.get(url));
         const email = res.data.email;
         const name = res.data.name;

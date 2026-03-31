@@ -97,7 +97,7 @@ export class PaymentsService {
             await this.paymentModel.updateOne({ orderId }, { status: 'SUCCESS' });
             try {
                 const method = 'VNPAY';
-                const url = `http://order-service:3000/orders/${orderId}/${method}`;
+                const url = `https://e-project-be-jodo.onrender.com/orders/${orderId}/${method}`;
                 const response: AxiosResponse<any> = await firstValueFrom(
                     this.httpService.post(
                         url,
@@ -209,7 +209,7 @@ export class PaymentsService {
 
             try {
                 const method = 'MOMO';
-                const url = `http://order-service:3000/orders/${orderId}/${method}`;
+                const url = `https://e-project-be-jodo.onrender.com/orders/${orderId}/${method}`;
                 const response: AxiosResponse<any> = await firstValueFrom(
                     this.httpService.post(
                         url,

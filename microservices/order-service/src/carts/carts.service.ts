@@ -70,7 +70,7 @@ export class CartsService {
     variantId: string,
     sizeId: string,
   ): Promise<{ productData: ProductData; variant: ProductVariant; size: ProductVariantSize }> {
-    const productUrl = `http://product-service:3000/products/${productId}`;
+    const productUrl = `https://e-project-be-jodo.onrender.com/products/${productId}`;
 
     let response;
     try {
@@ -118,7 +118,7 @@ export class CartsService {
 
     const products = await Promise.all(
       cart.items.map(async (item) => {
-        const url = `http://product-service:3000/products/${item.productId}`;
+        const url = `https://e-project-be-jodo.onrender.com/products/${item.productId}`;
         const res = await firstValueFrom(this.httpService.get(url));
         const product: ProductData = res.data;
 

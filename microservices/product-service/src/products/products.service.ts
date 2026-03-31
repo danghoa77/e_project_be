@@ -39,7 +39,7 @@ export class ProductsService {
             throw new NotFoundException('Product does not exist.');
         }
 
-        const url = `http://user-service:3000/users/${ratingDto.userId}`;
+        const url = `https://e-project-be-jodo.onrender.com/users/${ratingDto.userId}`;
         const res = await firstValueFrom(this.httpService.get(url));
         const newRating = {
             userId: ratingDto.userId,

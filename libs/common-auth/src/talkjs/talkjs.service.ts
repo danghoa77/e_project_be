@@ -106,7 +106,7 @@ export class TalkjsService {
 
 
   async getProductInfo(): Promise<any[]> {
-    const url = 'http://product-service:3000/products';
+    const url = 'https://e-project-be-jodo.onrender.com/products';
     try {
       const res = await firstValueFrom(this.httpService.get(url));
 
@@ -186,7 +186,7 @@ Instructions:
 
     const aiAnswer = await this.askCohere(prompt);
 
-    const url = `http://user-service:3000/users/admin1st`;
+    const url = `https://e-project-be-jodo.onrender.com/users/admin1st`;
     const res = await firstValueFrom(this.httpService.get<any>(url));
     const support = res.data._id;
 
