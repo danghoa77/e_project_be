@@ -53,7 +53,7 @@ export class AuthController {
       const { access_token } = await this.authService.validateGooglePassportUser(googleUser);
 
       const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'https://eprojectfe.vercel.app';
-      const redirectUrl = `${frontendUrl.replace(/\/$/, '')}/auth/callback?token=${access_token}`;
+      const redirectUrl = `${frontendUrl.replace(/\/$/, '')}/auth-success?token=${access_token}`;
 
       this.logger.log(`Redirecting to: ${redirectUrl}`);
       res.redirect(redirectUrl);
